@@ -1,0 +1,27 @@
+# docker/docker-compose.yml
+version: '3.8'
+
+services:
+  yashel_tracker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: yashel_tracker_bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_IDS=${ADMIN_IDS}
+      - DATABASE_URL=sqlite:///data/yashel_tracker.db
+      - DEBUG=${DEBUG:-False}
+    volumes:
+      - bot_data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - yashel_network
+
+volumes:
+  bot_data:
+
+networks:
+  yashel_network:
+    driver: bridge
