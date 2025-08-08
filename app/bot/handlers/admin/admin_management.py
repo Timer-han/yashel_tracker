@@ -12,7 +12,7 @@ from ....core.database.repositories.user_repository import UserRepository
 from ....core.database.models.admin import Admin
 from ....core.config import config
 from ...filters.role_filter import admin_filter
-from ..states.admin import AdminStates
+from ...states.admin import AdminStates
 
 router = Router()
 router.message.filter(admin_filter)

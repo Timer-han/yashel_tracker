@@ -7,7 +7,7 @@ from ...keyboards.user.registration import get_gender_keyboard, get_confirmation
 from ...keyboards.user.main_menu import get_main_menu_keyboard, get_moderator_menu_keyboard, get_admin_menu_keyboard
 from ....core.services.user_service import UserService
 from ....core.config import config
-from ..states.registration import RegistrationStates
+from ...states.registration import RegistrationStates
 
 router = Router()
 user_service = UserService()

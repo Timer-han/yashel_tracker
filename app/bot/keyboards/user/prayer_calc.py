@@ -43,3 +43,40 @@ def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
     builder.adjust(2)
     
     return builder.as_markup()
+
+def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура с типами намазов для ручного ввода"""
+    builder = InlineKeyboardBuilder()
+    
+    from ....core.config import config
+    
+    for prayer_type, prayer_name in config.PRAYER_TYPES.items():
+        builder.add(InlineKeyboardButton(
+            text=f"{prayer_name}: 0", 
+            callback_data=f"prayer_{prayer_type}_0"
+        ))
+    
+    builder.add(InlineKeyboardButton(text="✅ Готово", callback_data="prayer_done_0"))
+    
+    builder.adjust(2)
+    
+    return builder.as_markup()
+
+def get_updated_prayer_types_keyboard(manual_prayers: dict) -> InlineKeyboardMarkup:
+    """Клавиатура с обновленными значениями намазов"""
+    builder = InlineKeyboardBuilder()
+    
+    from ....core.config import config
+    
+    for prayer_type, prayer_name in config.PRAYER_TYPES.items():
+        count = manual_prayers.get(prayer_type, 0)
+        builder.add(InlineKeyboardButton(
+            text=f"{prayer_name}: {count}", 
+            callback_data=f"prayer_{prayer_type}_{count}"
+        ))
+    
+    builder.add(InlineKeyboardButton(text="✅ Готово", callback_data="prayer_done_0"))
+    
+    builder.adjust(2)
+    
+    return builder.as_markup()

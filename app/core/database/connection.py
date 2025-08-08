@@ -12,16 +12,17 @@ class DatabaseConnection:
         self.db_path = config.DATABASE_URL.replace("sqlite:///", "")
     
     async def get_connection(self) -> aiosqlite.Connection:
-        """Получение подключения к БД"""
+        """Получение нового подключения к БД"""
         connection = await aiosqlite.connect(self.db_path)
         connection.row_factory = aiosqlite.Row
         return connection
     
     async def initialize_database(self):
         """Инициализация базы данных"""
-        async with await self.get_connection() as db:
+        connection = await self.get_connection()
+        try:
             # Создание таблицы пользователей
-            await db.execute("""
+            await connection.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     telegram_id INTEGER UNIQUE NOT NULL,
@@ -43,7 +44,7 @@ class DatabaseConnection:
             """)
             
             # Создание таблицы намазов
-            await db.execute("""
+            await connection.execute("""
                 CREATE TABLE IF NOT EXISTS prayers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
@@ -58,7 +59,7 @@ class DatabaseConnection:
             """)
             
             # Создание таблицы истории намазов
-            await db.execute("""
+            await connection.execute("""
                 CREATE TABLE IF NOT EXISTS prayer_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
@@ -74,7 +75,7 @@ class DatabaseConnection:
             """)
             
             # Создание таблицы администраторов
-            await db.execute("""
+            await connection.execute("""
                 CREATE TABLE IF NOT EXISTS admins (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     telegram_id INTEGER UNIQUE NOT NULL,
@@ -86,8 +87,14 @@ class DatabaseConnection:
                 )
             """)
             
-            await db.commit()
+            await connection.commit()
             logger.info("База данных инициализирована")
+            
+        except Exception as e:
+            logger.error(f"Ошибка инициализации базы данных: {e}")
+            raise
+        finally:
+            await connection.close()
 
 # Создание глобального экземпляра
 db_manager = DatabaseConnection()

@@ -10,7 +10,7 @@ from ...keyboards.moderator.mod_menu import (
 from ....core.services.broadcast_service import BroadcastService
 from ....core.config import config
 from ...filters.role_filter import moderator_filter
-from ..states.moderator import ModeratorStates
+from ...states.moderator import ModeratorStates
 
 router = Router()
 router.message.filter(moderator_filter)

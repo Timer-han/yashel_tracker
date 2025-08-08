@@ -7,8 +7,9 @@ class PrayerHistoryRepository:
     
     async def add_history_record(self, history: PrayerHistory) -> bool:
         """Добавление записи в историю"""
-        async with await db_manager.get_connection() as db:
-            await db.execute("""
+        connection = await db_manager.get_connection()
+        try:
+            await connection.execute("""
                 INSERT INTO prayer_history (
                     user_id, prayer_type, action, amount, 
                     previous_value, new_value, comment
@@ -18,13 +19,16 @@ class PrayerHistoryRepository:
                 history.amount, history.previous_value, history.new_value,
                 history.comment
             ))
-            await db.commit()
+            await connection.commit()
             return True
+        finally:
+            await connection.close()
     
     async def get_user_history(self, user_id: int, limit: int = 50) -> List[PrayerHistory]:
         """Получение истории пользователя"""
-        async with await db_manager.get_connection() as db:
-            cursor = await db.execute("""
+        connection = await db_manager.get_connection()
+        try:
+            cursor = await connection.execute("""
                 SELECT * FROM prayer_history 
                 WHERE user_id = ? 
                 ORDER BY created_at DESC 
@@ -44,3 +48,5 @@ class PrayerHistoryRepository:
                     comment=row['comment']
                 ))
             return history
+        finally:
+            await connection.close()
