@@ -80,3 +80,22 @@ def get_updated_prayer_types_keyboard(manual_prayers: dict) -> InlineKeyboardMar
     builder.adjust(2)
     
     return builder.as_markup()
+
+
+def get_prayer_type_selection_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура выбора типа намаза для ручного ввода"""
+    builder = InlineKeyboardBuilder()
+    
+    from ....core.config import config
+    
+    for prayer_type, prayer_name in config.PRAYER_TYPES.items():
+        builder.add(InlineKeyboardButton(
+            text=prayer_name, 
+            callback_data=f"select_prayer_{prayer_type}"
+        ))
+    
+    builder.add(InlineKeyboardButton(text="✅ Завершить ввод", callback_data="finish_manual_input"))
+    
+    builder.adjust(2)
+    
+    return builder.as_markup()

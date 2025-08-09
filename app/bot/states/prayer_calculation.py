@@ -23,3 +23,7 @@ class PrayerCalculationStates(StatesGroup):
 
     waiting_for_adult_date = State()
     waiting_for_prayer_start_from_adult = State()
+
+    # Выбор типа намаза для ручного ввода
+    waiting_for_prayer_type_selection = State()
+    waiting_for_manual_prayer_count = State()

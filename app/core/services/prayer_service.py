@@ -135,3 +135,35 @@ class PrayerService:
             'total_remaining': total_remaining,
             'prayers': prayer_details
         }
+    
+    async def increase_missed_prayers(self, telegram_id: int, prayer_type: str, 
+                                      amount: int = 1) -> bool:
+        """Увеличение количества пропущенных намазов"""
+        prayer = await self.prayer_repo.get_prayer(telegram_id, prayer_type)
+        
+        if not prayer:
+            # Создаем новый намаз
+            await self.prayer_repo.create_or_update_prayer(
+                telegram_id, prayer_type, amount, 0
+            )
+        else:
+            # Обновляем существующий
+            await self.prayer_repo.create_or_update_prayer(
+                telegram_id, prayer_type, 
+                prayer.total_missed + amount, prayer.completed
+            )
+        
+        # Добавляем в историю
+        await self.history_repo.add_history_record(
+            PrayerHistory(
+                user_id=telegram_id,
+                prayer_type=prayer_type,
+                action='add_missed',
+                amount=amount,
+                previous_value=prayer.total_missed if prayer else 0,
+                new_value=(prayer.total_missed if prayer else 0) + amount,
+                comment='Увеличение пропущенных намазов'
+            )
+        )
+        
+        return True

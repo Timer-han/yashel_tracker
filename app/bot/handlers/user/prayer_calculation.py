@@ -6,6 +6,7 @@ import logging
 
 from ...keyboards.user.prayer_calc import get_calculation_method_keyboard, get_prayer_types_keyboard
 from ...keyboards.user.main_menu import get_main_menu_keyboard
+from ...keyboards.user.prayer_calc import get_prayer_type_selection_keyboard
 from ....core.services.calculation_service import CalculationService
 from ....core.services.prayer_service import PrayerService
 from ....core.services.user_service import UserService
@@ -156,47 +157,80 @@ async def calc_manual(callback: CallbackQuery, state: FSMContext):
     """Ручной ввод количества намазов"""
     await state.update_data(manual_prayers={})
     
+    from ...keyboards.user.prayer_calc import get_prayer_type_selection_keyboard
+    
     await callback.message.edit_text(
-        "✋ Ручной ввод намазов\n\n"
-        "Нажимайте на кнопки, чтобы изменить количество каждого типа намаза.\n"
-        "Когда закончите, нажмите 'Готово'.",
-        reply_markup=get_prayer_types_keyboard()
+        "✋ **Ручной ввод намазов**\n\n"
+        "Выберите тип намаза, для которого хотите указать количество пропущенных.",
+        reply_markup=get_prayer_type_selection_keyboard(),
+        parse_mode="Markdown"
     )
-    await state.set_state(PrayerCalculationStates.manual_input)
+    await state.set_state(PrayerCalculationStates.waiting_for_prayer_type_selection)
 
 # Продолжение следует...
 
-@router.callback_query(PrayerCalculationStates.manual_input, F.data.startswith("prayer_type_"))
-async def process_manual_prayer(callback: CallbackQuery, state: FSMContext):
-    """Обработка ручного изменения намазов"""
-    parts = callback.data.strip().split("_")
-    logger.critical(f"parts: {parts}")
+
+@router.callback_query(PrayerCalculationStates.waiting_for_prayer_type_selection, F.data.startswith("select_prayer_"))
+async def process_prayer_type_selection(callback: CallbackQuery, state: FSMContext):
+    """Обработка выбора типа намаза"""
+    prayer_type = callback.data.replace("select_prayer_", "")
     
-    if len(parts) < 4:
+    # Сохраняем выбранный тип намаза
+    await state.update_data(current_prayer_type=prayer_type)
+    
+    from ....core.config import config
+    prayer_name = config.PRAYER_TYPES[prayer_type]
+    
+    await callback.message.edit_text(
+        f"🕌 **{prayer_name}**\n\n"
+        f"Введите количество пропущенных намазов типа '{prayer_name}':\n\n"
+        "Например: 50"
+    )
+    await state.set_state(PrayerCalculationStates.waiting_for_manual_prayer_count)
+
+@router.message(PrayerCalculationStates.waiting_for_manual_prayer_count)
+async def process_manual_prayer_count(message: Message, state: FSMContext):
+    """Обработка ввода количества намазов"""
+    try:
+        count = int(message.text)
+        if count < 0:
+            await message.answer("❌ Количество не может быть отрицательным.")
+            return
+    except ValueError:
+        await message.answer("❌ Пожалуйста, введите число.")
         return
-        
-    prayer_type = parts[2]
-    current_count = int(parts[3])
     
     data = await state.get_data()
+    prayer_type = data['current_prayer_type']
     manual_prayers = data.get('manual_prayers', {})
     
-    # Увеличиваем количество
-    new_count = current_count + 1
-    manual_prayers[prayer_type] = new_count
-    
+    # Сохраняем количество
+    manual_prayers[prayer_type] = count
     await state.update_data(manual_prayers=manual_prayers)
     
-    # Обновляем клавиатуру
-    from ...keyboards.user.prayer_calc import get_updated_prayer_types_keyboard
-    await callback.message.edit_reply_markup(
-        reply_markup=get_updated_prayer_types_keyboard(manual_prayers)
-    )
+    from ....core.config import config
+    from ...keyboards.user.prayer_calc import get_prayer_type_selection_keyboard
     
     prayer_name = config.PRAYER_TYPES[prayer_type]
-    await callback.answer(f"✅ {prayer_name}: {new_count}")
+    
+    # Показываем результат и возвращаем к выбору
+    current_text = "✋ **Ручной ввод намазов**\n\n"
+    current_text += "✅ Сохранено:\n"
+    
+    for p_type, p_count in manual_prayers.items():
+        p_name = config.PRAYER_TYPES[p_type]
+        current_text += f"• {p_name}: {p_count}\n"
+    
+    current_text += "\nВыберите следующий тип намаза или завершите ввод:"
+    
+    await message.answer(
+        current_text,
+        reply_markup=get_prayer_type_selection_keyboard(),
+        parse_mode="Markdown"
+    )
+    await state.set_state(PrayerCalculationStates.waiting_for_prayer_type_selection)
 
-@router.callback_query(PrayerCalculationStates.manual_input, F.data == "prayer_done_0")
+@router.callback_query(PrayerCalculationStates.waiting_for_prayer_type_selection, F.data == "finish_manual_input")
 async def finish_manual_input(callback: CallbackQuery, state: FSMContext):
     """Завершение ручного ввода"""
     data = await state.get_data()
