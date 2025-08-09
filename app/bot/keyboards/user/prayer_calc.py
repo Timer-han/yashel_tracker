@@ -26,23 +26,23 @@ def get_calculation_method_keyboard() -> InlineKeyboardMarkup:
     
     return builder.as_markup()
 
-def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура с типами намазов для ручного ввода"""
-    builder = InlineKeyboardBuilder()
+# def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
+#     """Клавиатура с типами намазов для ручного ввода"""
+#     builder = InlineKeyboardBuilder()
     
-    from ....core.config import config
+#     from ....core.config import config
     
-    for prayer_type, prayer_name in config.PRAYER_TYPES.items():
-        builder.add(InlineKeyboardButton(
-            text=f"{prayer_name}: 0", 
-            callback_data=f"prayer_{prayer_type}_0"
-        ))
+#     for prayer_type, prayer_name in config.PRAYER_TYPES.items():
+#         builder.add(InlineKeyboardButton(
+#             text=f"{prayer_name}: 0", 
+#             callback_data=f"prayer_type_{prayer_type}_0"
+#         ))
     
-    builder.add(InlineKeyboardButton(text="✅ Готово", callback_data="prayers_done"))
+#     builder.add(InlineKeyboardButton(text="✅ Готово", callback_data="prayers_done"))
     
-    builder.adjust(2)
+#     builder.adjust(2)
     
-    return builder.as_markup()
+#     return builder.as_markup()
 
 def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура с типами намазов для ручного ввода"""
@@ -53,7 +53,7 @@ def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
     for prayer_type, prayer_name in config.PRAYER_TYPES.items():
         builder.add(InlineKeyboardButton(
             text=f"{prayer_name}: 0", 
-            callback_data=f"prayer_{prayer_type}_0"
+            callback_data=f"prayer_type_{prayer_type}_0"
         ))
     
     builder.add(InlineKeyboardButton(text="✅ Готово", callback_data="prayer_done_0"))

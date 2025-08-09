@@ -2,6 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import date, datetime
+import logging
 
 from ...keyboards.user.prayer_calc import get_calculation_method_keyboard, get_prayer_types_keyboard
 from ...keyboards.user.main_menu import get_main_menu_keyboard
@@ -12,6 +13,7 @@ from ....core.config import config
 from ...states.prayer_calculation import PrayerCalculationStates
 from ...utils.date_utils import parse_date, format_date
 
+logger = logging.getLogger(__name__)
 router = Router()
 calculation_service = CalculationService()
 prayer_service = PrayerService()
@@ -163,3 +165,138 @@ async def calc_manual(callback: CallbackQuery, state: FSMContext):
     await state.set_state(PrayerCalculationStates.manual_input)
 
 # Продолжение следует...
+
+@router.callback_query(PrayerCalculationStates.manual_input, F.data.startswith("prayer_type_"))
+async def process_manual_prayer(callback: CallbackQuery, state: FSMContext):
+    """Обработка ручного изменения намазов"""
+    parts = callback.data.strip().split("_")
+    logger.critical(f"parts: {parts}")
+    
+    if len(parts) < 4:
+        return
+        
+    prayer_type = parts[2]
+    current_count = int(parts[3])
+    
+    data = await state.get_data()
+    manual_prayers = data.get('manual_prayers', {})
+    
+    # Увеличиваем количество
+    new_count = current_count + 1
+    manual_prayers[prayer_type] = new_count
+    
+    await state.update_data(manual_prayers=manual_prayers)
+    
+    # Обновляем клавиатуру
+    from ...keyboards.user.prayer_calc import get_updated_prayer_types_keyboard
+    await callback.message.edit_reply_markup(
+        reply_markup=get_updated_prayer_types_keyboard(manual_prayers)
+    )
+    
+    prayer_name = config.PRAYER_TYPES[prayer_type]
+    await callback.answer(f"✅ {prayer_name}: {new_count}")
+
+@router.callback_query(PrayerCalculationStates.manual_input, F.data == "prayer_done_0")
+async def finish_manual_input(callback: CallbackQuery, state: FSMContext):
+    """Завершение ручного ввода"""
+    data = await state.get_data()
+    manual_prayers = data.get('manual_prayers', {})
+    
+    # Проверяем, есть ли хотя бы один намаз
+    total_prayers = sum(manual_prayers.values())
+    if total_prayers == 0:
+        await callback.answer("❌ Введите хотя бы один намаз", show_alert=True)
+        return
+    
+    # Сохраняем результат
+    await prayer_service.set_user_prayers(callback.from_user.id, manual_prayers)
+    
+    # Показываем результат
+    result_text = (
+        f"✅ Ручной ввод завершен!\n\n"
+        f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+        "Детализация:\n"
+    )
+    
+    for prayer_type, count in manual_prayers.items():
+        if count > 0:
+            prayer_name = config.PRAYER_TYPES[prayer_type]
+            result_text += f"• {prayer_name}: {count}\n"
+    
+    result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+    
+    await callback.message.edit_text(result_text, parse_mode="Markdown")
+    await callback.message.answer(
+        "🏠 Возвращаемся в главное меню",
+        reply_markup=get_main_menu_keyboard()
+    )
+    await state.clear()
+
+@router.callback_query(PrayerCalculationStates.choosing_method, F.data == "calc_custom_adult")
+async def calc_custom_adult_dates(callback: CallbackQuery, state: FSMContext):
+    """Расчет с заданием дат совершеннолетия"""
+    await callback.message.edit_text(
+        "📅 Этот метод позволяет указать точную дату совершеннолетия.\n\n"
+        "Введите дату совершеннолетия (когда стали обязаны совершать намазы) в формате ДД.ММ.ГГГГ:\n"
+        "Например: 15.03.2005"
+    )
+    await state.set_state(PrayerCalculationStates.waiting_for_adult_date)
+
+@router.message(PrayerCalculationStates.waiting_for_adult_date)
+async def process_adult_date(message: Message, state: FSMContext):
+    """Обработка даты совершеннолетия"""
+    adult_date = parse_date(message.text)
+    if not adult_date:
+        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+        return
+    
+    await state.update_data(adult_date=adult_date)
+    
+    await message.answer(
+        "📅 Введите дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
+        "Например: 01.01.2020"
+    )
+    await state.set_state(PrayerCalculationStates.waiting_for_prayer_start_from_adult)
+
+@router.message(PrayerCalculationStates.waiting_for_prayer_start_from_adult)
+async def process_prayer_start_from_adult(message: Message, state: FSMContext):
+    """Обработка даты начала намазов после указания даты совершеннолетия"""
+    prayer_start_date = parse_date(message.text)
+    if not prayer_start_date:
+        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+        return
+    
+    data = await state.get_data()
+    adult_date = data['adult_date']
+    
+    if prayer_start_date <= adult_date:
+        await message.answer("❌ Дата начала намазов должна быть позже даты совершеннолетия.")
+        return
+    
+    # Рассчитываем намазы
+    prayers_data = calculation_service.calculate_prayers_from_dates(adult_date, prayer_start_date)
+    
+    # Сохраняем результат
+    await prayer_service.set_user_prayers(message.from_user.id, prayers_data)
+    
+    # Показываем результат
+    total_prayers = sum(prayers_data.values())
+    days_count = (prayer_start_date - adult_date).days
+    
+    result_text = (
+        f"✅ Расчет завершен!\n\n"
+        f"📊 Период: с {format_date(adult_date)} по {format_date(prayer_start_date)}\n"
+        f"📅 Количество дней: {days_count}\n\n"
+        f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+        "Детализация:\n"
+    )
+    
+    for prayer_type, count in prayers_data.items():
+        if count > 0:
+            prayer_name = config.PRAYER_TYPES[prayer_type]
+            result_text += f"• {prayer_name}: {count}\n"
+    
+    result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+    
+    await message.answer(result_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+    await state.clear()

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import date
+import datetime
 from ..connection import db_manager
 from ..models.user import User
 
@@ -45,7 +45,7 @@ class UserRepository:
                 last_name=row['last_name'],
                 full_name=row['full_name'],
                 gender=row['gender'],
-                birth_date=row['birth_date'],
+                birth_date=datetime.datetime.strptime(row['birth_date'], "%Y-%m-%d").date(),
                 city=row['city'],
                 role=row['role'],
                 is_registered=row['is_registered'],

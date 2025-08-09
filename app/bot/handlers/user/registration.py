@@ -9,8 +9,13 @@ from ....core.services.user_service import UserService
 from ....core.config import config
 from ...states.registration import RegistrationStates
 
+import logging
+logger = logging.getLogger(__name__)
+
 router = Router()
 user_service = UserService()
+
+
 
 @router.message(RegistrationStates.waiting_for_name)
 async def process_name(message: Message, state: FSMContext):

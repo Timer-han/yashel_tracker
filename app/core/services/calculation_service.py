@@ -1,6 +1,10 @@
 from datetime import date, timedelta
 from typing import Dict, Tuple
 from ..config import config
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class CalculationService:
     """Сервис для расчета количества намазов"""

@@ -8,17 +8,39 @@ def get_prayer_tracking_keyboard(prayers: List[Prayer]) -> InlineKeyboardMarkup:
     """Клавиатура для отслеживания намазов"""
     builder = InlineKeyboardBuilder()
     
-    # Создаем кнопки для каждого типа намаза
-    for prayer_type, prayer_name in config.PRAYER_TYPES.items():
-        # Находим данные о намазе
+    # Разделяем намазы на обычные и сафар
+    regular_prayers = []
+    safar_prayers = []
+    
+    prayer_order = ['fajr', 'zuhr', 'asr', 'maghrib', 'isha', 'witr']  # Порядок обычных намазов
+    safar_order = ['zuhr_safar', 'asr_safar', 'isha_safar']  # Порядок сафар намазов
+    
+    # Сначала добавляем обычные намазы в правильном порядке
+    for prayer_type in prayer_order:
         prayer_data = next((p for p in prayers if p.prayer_type == prayer_type), None)
-        remaining = prayer_data.remaining if prayer_data else 0
-        
-        if remaining > 0:
-            # Кнопки уменьшения и увеличения
+        if prayer_data and prayer_data.remaining > 0:
+            prayer_name = config.PRAYER_TYPES[prayer_type]
             builder.add(
                 InlineKeyboardButton(text="➖", callback_data=f"prayer_dec_{prayer_type}"),
-                InlineKeyboardButton(text=f"{prayer_name}: {remaining}", callback_data=f"prayer_info_{prayer_type}"),
+                InlineKeyboardButton(text=f"{prayer_name}: {prayer_data.remaining}", callback_data=f"prayer_info_{prayer_type}"),
+                InlineKeyboardButton(text="➕", callback_data=f"prayer_inc_{prayer_type}")
+            )
+    
+    # Добавляем разделитель, если есть и обычные, и сафар намазы
+    has_regular = any(p for p in prayers if p.prayer_type in prayer_order and p.remaining > 0)
+    has_safar = any(p for p in prayers if p.prayer_type in safar_order and p.remaining > 0)
+    
+    if has_regular and has_safar:
+        builder.add(InlineKeyboardButton(text="✈️ — Сафар намазы — ✈️", callback_data="safar_divider"))
+    
+    # Затем добавляем сафар намазы
+    for prayer_type in safar_order:
+        prayer_data = next((p for p in prayers if p.prayer_type == prayer_type), None)
+        if prayer_data and prayer_data.remaining > 0:
+            prayer_name = config.PRAYER_TYPES[prayer_type]
+            builder.add(
+                InlineKeyboardButton(text="➖", callback_data=f"prayer_dec_{prayer_type}"),
+                InlineKeyboardButton(text=f"{prayer_name}: {prayer_data.remaining}", callback_data=f"prayer_info_{prayer_type}"),
                 InlineKeyboardButton(text="➕", callback_data=f"prayer_inc_{prayer_type}")
             )
     
@@ -27,9 +49,18 @@ def get_prayer_tracking_keyboard(prayers: List[Prayer]) -> InlineKeyboardMarkup:
     builder.add(InlineKeyboardButton(text="🔄 Сброс", callback_data="reset_prayers"))
     builder.add(InlineKeyboardButton(text="⚙️ Настройки", callback_data="prayer_settings"))
     
-    # Настраиваем расположение: по 3 кнопки в ряду для намазов, затем по 1
-    prayer_rows = len([p for p in prayers if p.remaining > 0])
-    adjust_pattern = [3] * prayer_rows + [1, 1, 1]
+    # Настраиваем расположение
+    regular_rows = len([p for p in prayers if p.prayer_type in prayer_order and p.remaining > 0])
+    safar_rows = len([p for p in prayers if p.prayer_type in safar_order and p.remaining > 0])
+    
+    adjust_pattern = [3] * regular_rows
+    
+    if has_regular and has_safar:
+        adjust_pattern += [1]  # Для разделителя
+    
+    adjust_pattern += [3] * safar_rows
+    adjust_pattern += [1, 1, 1]  # Для дополнительных кнопок
+    
     builder.adjust(*adjust_pattern)
     
     return builder.as_markup()

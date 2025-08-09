@@ -20,3 +20,6 @@ class PrayerCalculationStates(StatesGroup):
     manual_input = State()
     
     confirmation = State()
+
+    waiting_for_adult_date = State()
+    waiting_for_prayer_start_from_adult = State()

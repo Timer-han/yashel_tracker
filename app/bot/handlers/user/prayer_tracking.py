@@ -52,14 +52,19 @@ async def increase_prayer(callback: CallbackQuery):
     )
     
     if success:
+        # Получаем обновленные данные
+        updated_prayer = await prayer_service.prayer_repo.get_prayer(callback.from_user.id, prayer_type)
+        
         # Обновляем клавиатуру
         prayers = await prayer_service.get_user_prayers(callback.from_user.id)
         await callback.message.edit_reply_markup(
             reply_markup=get_prayer_tracking_keyboard(prayers)
         )
         
-        prayer_name = config.PRAYER_TYPES[prayer_type]
-        await callback.answer(f"✅ {prayer_name} +1", show_alert=False)
+        # Отправляем сообщение о действии
+        await send_action_message(callback, prayer_type, 1, updated_prayer)
+        
+        await callback.answer()
     else:
         await callback.answer("❌ Ошибка обновления", show_alert=True)
 
@@ -79,14 +84,19 @@ async def decrease_prayer(callback: CallbackQuery):
     )
     
     if success:
+        # Получаем обновленные данные
+        updated_prayer = await prayer_service.prayer_repo.get_prayer(callback.from_user.id, prayer_type)
+        
         # Обновляем клавиатуру
         prayers = await prayer_service.get_user_prayers(callback.from_user.id)
         await callback.message.edit_reply_markup(
             reply_markup=get_prayer_tracking_keyboard(prayers)
         )
         
-        prayer_name = config.PRAYER_TYPES[prayer_type]
-        await callback.answer(f"➖ {prayer_name} -1", show_alert=False)
+        # Отправляем сообщение о действии
+        await send_action_message(callback, prayer_type, -1, updated_prayer)
+        
+        await callback.answer()
     else:
         await callback.answer("❌ Ошибка обновления", show_alert=True)
 
@@ -166,3 +176,46 @@ async def cancel_reset_prayers(callback: CallbackQuery):
     """Отмена сброса намазов"""
     await callback.message.edit_text("❌ Сброс отменен.")
     await callback.answer()
+
+async def send_action_message(message_or_callback, prayer_type: str, change: int, prayer_data):
+    """Отправка сообщения о действии с намазом"""
+    prayer_name = config.PRAYER_TYPES[prayer_type]
+    action_text = "добавлен" if change > 0 else "убран"
+    action_emoji = "✅" if change > 0 else "➖"
+    
+    # Определяем progress bar
+    if prayer_data.total_missed > 0:
+        progress = (prayer_data.completed / prayer_data.total_missed) * 100
+        progress_bar = "▓" * int(progress / 10) + "░" * (10 - int(progress / 10))
+        progress_text = f"\n📊 Прогресс: [{progress_bar}] {progress:.1f}%"
+    else:
+        progress_text = ""
+    
+    response_text = (
+        f"{action_emoji} **{prayer_name}:** {action_text} {abs(change)} намаз{'а' if abs(change) in [2,3,4] else 'ов' if abs(change) > 4 else ''}\n\n"
+        f"📝 Восполнено: **{prayer_data.completed}**\n"
+        f"⏳ Осталось: **{prayer_data.remaining}**"
+        f"{progress_text}"
+    )
+    
+    # Мотивационное сообщение
+    if prayer_data.remaining == 0:
+        response_text += f"\n\n🎉 **Машаа Ллах!** Все {prayer_name} восполнены!"
+    elif prayer_data.remaining <= 10:
+        response_text += f"\n\n🎯 Осталось совсем немного!"
+    elif prayer_data.completed % 50 == 0 and prayer_data.completed > 0:
+        response_text += f"\n\n💪 Отличный прогресс! Уже {prayer_data.completed} восполнено!"
+    
+    # Отправляем сообщение
+    if hasattr(message_or_callback, 'answer'):
+        # Это callback
+        await message_or_callback.message.answer(response_text, parse_mode="Markdown")
+    else:
+        # Это message
+        await message_or_callback.answer(response_text, parse_mode="Markdown")
+
+
+@router.callback_query(F.data == "safar_divider")
+async def safar_divider_handler(callback: CallbackQuery):
+    """Обработчик разделителя сафар намазов"""
+    await callback.answer("✈️ Это сафар намазы - сокращенные намазы для путешествий", show_alert=True)
