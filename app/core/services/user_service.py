@@ -10,8 +10,7 @@ class UserService:
     def __init__(self):
         self.user_repo = UserRepository()
     
-    async def get_or_create_user(self, telegram_id: int, username: str = None,
-                                 first_name: str = None, last_name: str = None) -> User:
+    async def get_or_create_user(self, telegram_id: int, username: str = None) -> User:
         """Получение или создание пользователя"""
         user = await self.user_repo.get_user_by_telegram_id(telegram_id)
         
@@ -22,29 +21,29 @@ class UserService:
             user = User(
                 telegram_id=telegram_id,
                 username=username,
-                first_name=first_name,
-                last_name=last_name,
                 role=role
             )
             await self.user_repo.create_user(user)
         
         return user
     
-    async def complete_registration(self, telegram_id: int, full_name: str = None,
-                                    gender: str = None, birth_date: date = None,
-                                    city: str = None, prayer_start_date: date = None,
-                                    adult_date: date = None) -> bool:
+    async def complete_registration(self, telegram_id: int, gender: str = None,
+                                birth_date: date = None, city: str = None,
+                                childbirth_count: int = 0, childbirths: list = None,
+                                hyde_periods: list = None, nifas_lengths: list = None) -> bool:
         """Завершение регистрации пользователя"""
         return await self.user_repo.update_user(
             telegram_id=telegram_id,
-            full_name=full_name,
             gender=gender,
             birth_date=birth_date,
             city=city,
-            prayer_start_date=prayer_start_date,
-            adult_date=adult_date,
+            childbirth_count=childbirth_count,
+            childbirths=User.childbirths_to_json_static(childbirths or []),
+            hyde_periods=User.hyde_periods_to_json_static(hyde_periods or []),
+            nifas_lengths=User.nifas_lengths_to_json_static(nifas_lengths or []),
             is_registered=True
         )
+
     
     async def update_last_activity(self, telegram_id: int) -> bool:
         """Обновление времени последней активности"""

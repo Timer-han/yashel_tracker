@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from ...keyboards.user.main_menu import get_main_menu_keyboard, get_moderator_menu_keyboard, get_admin_menu_keyboard
-from ...keyboards.user.registration import get_skip_name_keyboard
+from ...keyboards.user.registration import get_gender_keyboard
 from ....core.services.user_service import UserService
 from ....core.config import config
 from ...states.registration import RegistrationStates
@@ -19,20 +19,18 @@ async def cmd_start(message: Message, state: FSMContext):
     
     user = await user_service.get_or_create_user(
         telegram_id=message.from_user.id,
-        username=message.from_user.username,
-        first_name=message.from_user.first_name,
-        last_name=message.from_user.last_name
+        username=message.from_user.username
     )
     
     if not user.is_registered:
         await message.answer(
             "🕌 Ассаляму алейкум! Добро пожаловать в Яшел Трекер!\n\n"
-            "Этот бот поможет вам отслеживать восполнение пропущенных намазов.\n\n"
+            "Этот бот поможет вам отслеживать восполнение пропущенных намазов и постов.\n\n"
             "📝 Для начала давайте пройдем небольшую регистрацию.\n\n"
-            "Как вас зовут? (Или нажмите 'Пропустить', чтобы использовать имя из Telegram)",
-            reply_markup=get_skip_name_keyboard()
+            "👤 Укажите ваш пол:",
+            reply_markup=get_gender_keyboard()
         )
-        await state.set_state(RegistrationStates.waiting_for_name)
+        await state.set_state(RegistrationStates.waiting_for_gender)
     else:
         # Показываем соответствующее меню в зависимости от роли
         if user.role == config.Roles.ADMIN:
@@ -46,7 +44,7 @@ async def cmd_start(message: Message, state: FSMContext):
             welcome_text = "🏠 Главное меню"
         
         await message.answer(
-            f"🕌 Ассаляму алейкум, {user.full_name or user.first_name}!\n\n"
+            f"🕌 Ассаляму алейкум, {user.username}!\n\n"
             f"{welcome_text}",
             reply_markup=keyboard
         )

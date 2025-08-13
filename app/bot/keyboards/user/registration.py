@@ -30,3 +30,14 @@ def get_confirmation_keyboard() -> InlineKeyboardMarkup:
     builder.adjust(2)
     
     return builder.as_markup()
+
+def get_childbirth_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура для вопроса о родах"""
+    builder = InlineKeyboardBuilder()
+    
+    builder.add(InlineKeyboardButton(text="✅ Да, были роды", callback_data="has_childbirths"))
+    builder.add(InlineKeyboardButton(text="❌ Нет, не было", callback_data="no_childbirths"))
+    
+    builder.adjust(1)
+    
+    return builder.as_markup()

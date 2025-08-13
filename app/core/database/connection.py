@@ -42,6 +42,7 @@ class DatabaseConnection:
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
             
             # Создание таблицы намазов
             await connection.execute("""
@@ -95,6 +96,13 @@ class DatabaseConnection:
             raise
         finally:
             await connection.close()
+        
+        # Импортируем migration_manager здесь, чтобы избежать циклического импорта
+        from .migration_manager import migration_manager
+        
+        # Запускаем миграции
+        await migration_manager.run_migrations()
+        logger.info("База данных инициализирована")
 
 # Создание глобального экземпляра
 db_manager = DatabaseConnection()
