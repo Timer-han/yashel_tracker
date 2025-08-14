@@ -2,7 +2,6 @@ from aiogram import Dispatcher
 
 from .common import start, help, cancel
 from .user import registration, statistics, prayer_calculation, prayer_tracking
-from .user import fast_calculation, fast_tracking
 from .moderator import broadcast, user_statistics
 from .admin import admin_management
 from .user.settings import router as settings_router
@@ -29,7 +28,3 @@ def register_all_handlers(dp: Dispatcher):
     dp.include_router(admin_management.router)
 
     dp.include_router(settings_router)
-
-    # Обработчики постов
-    dp.include_router(fast_calculation.router)
-    dp.include_router(fast_tracking.router)

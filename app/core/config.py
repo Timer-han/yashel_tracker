@@ -39,18 +39,6 @@ class Config:
         'asr_safar': 'Аср сафар',
         'isha_safar': 'Иша сафар'
     }
-
-    # Минимальный возраст совершеннолетия по полу
-    ADULT_AGE_MALE = 12
-    ADULT_AGE_FEMALE = 9
-
-    # Типы постов
-    FAST_TYPES = {
-        'ramadan': 'Рамадан',
-        'voluntary': 'Добровольные посты',
-        'oath': 'Посты по обету',
-        'kaffarah': 'Каффара'
-    }
     
     # Роли пользователей
     class Roles:
