@@ -8,6 +8,7 @@ from ...keyboards.user.main_menu import get_main_menu_keyboard, get_moderator_me
 from ....core.services.user_service import UserService
 from ....core.config import config
 from ...states.registration import RegistrationStates
+from ..user.female_periods import start_female_periods_input
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,9 +22,10 @@ user_service = UserService()
 async def process_name(message: Message, state: FSMContext):
     """Обработка ввода имени"""
     if message.text == "⏭️ Пропустить":
-        full_name = f"{message.from_user.first_name or ''} {message.from_user.last_name or ''}".strip()
+        full_name = f"{message.from_user.first_name or ''} {message.from_user.last_name or ''}".strip() or "Пользователь"
     else:
         full_name = message.text
+
     
     await state.update_data(full_name=full_name)
     
@@ -121,6 +123,12 @@ async def confirm_registration(callback: CallbackQuery, state: FSMContext):
     
     if success:
         await callback.message.edit_text("✅ Регистрация завершена!")
+        
+        # Для женщин запускаем ввод информации о периодах
+        if data['gender'] == 'female':
+            should_continue = await start_female_periods_input(callback.message, state)
+            if should_continue:
+                return
         
         # Получаем пользователя для определения роли
         user = await user_service.get_or_create_user(

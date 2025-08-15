@@ -24,7 +24,7 @@ async def send_daily_reminders():
                 
                 if stats['total_remaining'] > 0:
                     message_text = (
-                        f"🌙 Доброй ночи, {user.full_name or user.first_name}!\n\n"
+                        f"🌙 Доброй ночи, {user.full_name or user.username}!\n\n"
                         f"📊 Ваша статистика на сегодня:\n"
                         f"⏳ Осталось восполнить: **{stats['total_remaining']}** намазов\n\n"
                         "🤲 Не забывайте о восполнении намазов каждый день.\n"

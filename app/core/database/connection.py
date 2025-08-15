@@ -86,6 +86,67 @@ class DatabaseConnection:
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            # Создание таблицы для хайд
+            await connection.execute("""
+                CREATE TABLE IF NOT EXISTS hayd_info (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    average_duration INTEGER NOT NULL,
+                    period_number INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    UNIQUE(user_id, period_number)
+                )
+            """)
+
+            # Создание таблицы для нифас
+            await connection.execute("""
+                CREATE TABLE IF NOT EXISTS nifas_info (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    childbirth_number INTEGER NOT NULL,
+                    childbirth_date DATE NOT NULL,
+                    nifas_duration INTEGER NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    UNIQUE(user_id, childbirth_number)
+                )
+            """)
+
+            # Создание таблицы для постов
+            await connection.execute("""
+                CREATE TABLE IF NOT EXISTS fasts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    fast_type TEXT NOT NULL,
+                    year INTEGER,
+                    total_missed INTEGER DEFAULT 0,
+                    completed INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    UNIQUE(user_id, fast_type, year)
+                )
+            """)
+
+            # Создание таблицы истории постов
+            await connection.execute("""
+                CREATE TABLE IF NOT EXISTS fast_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    fast_type TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    previous_value INTEGER NOT NULL,
+                    new_value INTEGER NOT NULL,
+                    comment TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            """)
             
             await connection.commit()
             logger.info("База данных инициализирована")

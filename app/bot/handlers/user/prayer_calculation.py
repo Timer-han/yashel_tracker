@@ -13,12 +13,18 @@ from ....core.services.user_service import UserService
 from ....core.config import config
 from ...states.prayer_calculation import PrayerCalculationStates
 from ...utils.date_utils import parse_date, format_date
+from ....core.database.repositories.female_periods_repository import FemalePeriodsRepository
+from ....core.services.enhanced_calculation_service import EnhancedCalculationService
+
 
 logger = logging.getLogger(__name__)
 router = Router()
 calculation_service = CalculationService()
 prayer_service = PrayerService()
 user_service = UserService()
+periods_repo = FemalePeriodsRepository()
+enhanced_calc_service = EnhancedCalculationService()
+
 
 @router.message(F.text == "🔢 Расчет намазов")
 async def start_prayer_calculation(message: Message, state: FSMContext):
@@ -55,10 +61,25 @@ async def process_prayer_start_date(message: Message, state: FSMContext):
         await message.answer("❌ Для этого расчета нужна ваша дата рождения. Пройдите регистрацию сначала.")
         return
     
-    # Рассчитываем намазы
-    prayers_data = calculation_service.calculate_prayers_from_age(
-        birth_date=user.birth_date,
-        prayer_start_date=prayer_start_date
+    # Получаем информацию о женских периодах
+    hayd_info_list = []
+    nifas_info_list = []
+
+    if user.gender == 'female':
+        hayd_info_list = await periods_repo.get_all_hayd_info(message.from_user.id)
+        nifas_info_list = await periods_repo.get_all_nifas_info(message.from_user.id)
+
+    # Используем правильный возраст совершеннолетия
+    adult_age = enhanced_calc_service.get_adult_age_by_gender(user.gender)
+    adult_date = user.birth_date.replace(year=user.birth_date.year + adult_age)
+
+    # Рассчитываем намазы с учетом периодов
+    prayers_data = enhanced_calc_service.calculate_prayers_with_female_periods(
+        start_date=adult_date,
+        end_date=prayer_start_date,
+        gender=user.gender,
+        hayd_info_list=hayd_info_list,
+        nifas_info_list=nifas_info_list
     )
     
     # Сохраняем результат
