@@ -5,8 +5,6 @@ from .user import registration, statistics, prayer_calculation, prayer_tracking
 from .moderator import broadcast, user_statistics
 from .admin import admin_management
 from .user.settings import router as settings_router
-from .user import female_periods, fast_calculation
-from .user import fast_tracking
 
 def register_all_handlers(dp: Dispatcher):
     """Регистрация всех обработчиков"""
@@ -21,9 +19,6 @@ def register_all_handlers(dp: Dispatcher):
     dp.include_router(statistics.router)
     dp.include_router(prayer_calculation.router)
     dp.include_router(prayer_tracking.router)
-    dp.include_router(female_periods.router)
-    dp.include_router(fast_calculation.router)
-    dp.include_router(fast_tracking.router)
     
     # Обработчики модераторов
     dp.include_router(broadcast.router)

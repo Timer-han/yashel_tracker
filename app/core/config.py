@@ -22,10 +22,7 @@ class Config:
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
     
     # Возрast совершеннолетия в исламе
-    # Возраст совершеннолетия в исламе
-    ADULT_AGE_MALE: int = 12
-    ADULT_AGE_FEMALE: int = 9
-
+    ADULT_AGE: int = 12
     
     # Время для ежедневных напоминаний (час в формате 24ч)
     DAILY_REMINDER_HOUR: int = 20  # 20:00
@@ -42,18 +39,6 @@ class Config:
         'asr_safar': 'Аср сафар',
         'isha_safar': 'Иша сафар'
     }
-
-    # Типы постов
-    FAST_TYPES = {
-        'ramadan': 'Рамадан',
-        'shawwal': 'Шавваль (6 дней)',
-        'other': 'Другие посты'
-    }
-
-    # Минимальная и максимальная продолжительность периодов
-    HAYD_MIN_DAYS = 3
-    HAYD_MAX_DAYS = 10
-    NIFAS_MAX_DAYS = 40
     
     # Роли пользователей
     class Roles:

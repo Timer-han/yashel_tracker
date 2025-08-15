@@ -1,13 +1,12 @@
 from datetime import date, timedelta
 from typing import Dict, Tuple
 from ..config import config
-from .enhanced_calculation_service import EnhancedCalculationService
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class CalculationService(EnhancedCalculationService):
+class CalculationService:
     """Сервис для расчета количества намазов"""
     
     def calculate_prayers_from_age(self, birth_date: date, adult_age: int = None,

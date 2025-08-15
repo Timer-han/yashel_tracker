@@ -3,10 +3,9 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from datetime import datetime, date
 
-from ....core.services.calculation_service import CalculationService
-from ....core.services.fast_service import FastService
 from ....core.services.prayer_service import PrayerService
 from ....core.services.user_service import UserService
+from ....core.services.calculation_service import CalculationService
 from ....core.config import config
 from ...keyboards.user.statistics import get_statistics_keyboard
 
@@ -14,8 +13,6 @@ router = Router()
 prayer_service = PrayerService()
 user_service = UserService()
 calc_service = CalculationService()
-fast_service = FastService()
-
 
 @router.message(F.text == "📊 Моя статистика")
 @router.message(Command("stats"))
@@ -36,7 +33,7 @@ async def show_user_statistics(message: Message):
     # Основная статистика
     stats_text = (
         "📊 **Подробная статистика восполнения намазов:**\n\n"
-        f"👤 Пользователь: {user.full_name or user.username}\n"
+        f"👤 Пользователь: {user.full_name or user.first_name}\n"
         f"📅 Возраст: {calc_service.calculate_age(user.birth_date) if user.birth_date else 'Не указан'} лет\n"
         f"🏙️ Город: {user.city or 'Не указан'}\n\n"
         f"📝 **Всего пропущено: {stats['total_missed']}**\n"
@@ -99,25 +96,6 @@ async def show_user_statistics(message: Message):
                 f"({progress_pct:.1f}% - осталось {data['remaining']})\n"
             )
         stats_text += "\n"
-
-    # Статистика постов
-    fast_stats = await fast_service.get_user_fast_statistics(message.from_user.id)
-
-    if fast_stats['total_missed'] > 0:
-        stats_text += "\n📿 **Статистика постов:**\n"
-        stats_text += f"• Всего пропущено: **{fast_stats['total_missed']}** дней\n"
-        stats_text += f"• Восполнено: **{fast_stats['total_completed']}** дней\n"
-        stats_text += f"• Осталось: **{fast_stats['total_remaining']}** дней\n"
-        
-        if fast_stats['total_missed'] > 0:
-            fast_progress = (fast_stats['total_completed'] / fast_stats['total_missed']) * 100
-            stats_text += f"• Прогресс: **{fast_progress:.1f}%**\n"
-        
-        if fast_stats['fasts']:
-            stats_text += "\n**Детализация постов:**\n"
-            for fast_name, data in fast_stats['fasts'].items():
-                if data['total'] > 0:
-                    stats_text += f"• {fast_name}: {data['completed']}/{data['total']}\n"
     
     # Мотивационное сообщение
     if stats['total_remaining'] > 0:

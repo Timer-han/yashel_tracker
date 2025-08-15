@@ -9,13 +9,11 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     
     builder.add(KeyboardButton(text="📊 Моя статистика"))
     builder.add(KeyboardButton(text="🔢 Расчет намазов"))
-    builder.add(KeyboardButton(text="📿 Расчет постов"))
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
-    builder.add(KeyboardButton(text="📿 Отметить посты"))
     builder.add(KeyboardButton(text="⚙️ Настройки"))
     builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
-    builder.adjust(3, 2, 2)  # Изменено расположение
+    builder.adjust(2, 2, 1)
     
     return builder.as_markup(resize_keyboard=True)
 
@@ -26,10 +24,7 @@ def get_moderator_menu_keyboard() -> ReplyKeyboardMarkup:
     # Обычные функции пользователя
     builder.add(KeyboardButton(text="📊 Моя статистика"))
     builder.add(KeyboardButton(text="🔢 Расчет намазов"))
-    builder.add(KeyboardButton(text="📿 Расчет постов"))
-
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
-    builder.add(KeyboardButton(text="📿 Отметить посты"))
     
     # Функции модератора
     builder.add(KeyboardButton(text="📈 Общая статистика"))
@@ -38,7 +33,7 @@ def get_moderator_menu_keyboard() -> ReplyKeyboardMarkup:
     builder.add(KeyboardButton(text="⚙️ Настройки"))
     builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
-    builder.adjust(3, 2, 2, 2)
+    builder.adjust(3, 2, 2)
     
     return builder.as_markup(resize_keyboard=True)
 
@@ -49,9 +44,7 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     # Обычные функции пользователя
     builder.add(KeyboardButton(text="📊 Моя статистика"))
     builder.add(KeyboardButton(text="🔢 Расчет намазов"))
-    builder.add(KeyboardButton(text="📿 Расчет постов"))
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
-    builder.add(KeyboardButton(text="📿 Отметить посты"))
     
     # Функции модератора
     builder.add(KeyboardButton(text="📈 Общая статистика"))
@@ -63,6 +56,6 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     builder.add(KeyboardButton(text="⚙️ Настройки"))
     builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
-    builder.adjust(3, 2, 2, 3)
+    builder.adjust(3, 2, 1, 2)
     
     return builder.as_markup(resize_keyboard=True)

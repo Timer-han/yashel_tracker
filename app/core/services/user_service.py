@@ -11,7 +11,7 @@ class UserService:
         self.user_repo = UserRepository()
     
     async def get_or_create_user(self, telegram_id: int, username: str = None,
-                             full_name: str = None) -> User:  # Изменено: убрали first_name и last_name
+                                 first_name: str = None, last_name: str = None) -> User:
         """Получение или создание пользователя"""
         user = await self.user_repo.get_user_by_telegram_id(telegram_id)
         
@@ -22,7 +22,8 @@ class UserService:
             user = User(
                 telegram_id=telegram_id,
                 username=username,
-                full_name=full_name,  # Изменено
+                first_name=first_name,
+                last_name=last_name,
                 role=role
             )
             await self.user_repo.create_user(user)
