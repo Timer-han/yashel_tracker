@@ -71,18 +71,20 @@ async def process_city(message: Message, state: FSMContext):
     
     data = await state.get_data()
     
-    # Если женщина, спрашиваем про хайд
-    if data.get('gender') == 'female':
-        await message.answer(
-            "📊 Для точного расчета намазов и постов нужна дополнительная информация.\n\n"
-            "🌙 Укажите ТЕКУЩУЮ среднюю продолжительность хайда в днях (от 3 до 10):\n"
-            "Например: 5\n\n"
-            "💡 Это ваша текущая продолжительность цикла"
-        )
-        await state.set_state(RegistrationStates.waiting_for_hayd_average)
-    else:
-        # Для мужчин сразу показываем подтверждение
-        await show_confirmation(message, state)
+    # # Если женщина, спрашиваем про хайд
+    # if data.get('gender') == 'female':
+    #     await message.answer(
+    #         "📊 Для точного расчета намазов и постов нужна дополнительная информация.\n\n"
+    #         "🌙 Укажите ТЕКУЩУЮ среднюю продолжительность хайда в днях (от 3 до 10):\n"
+    #         "Например: 5\n\n"
+    #         "💡 Это ваша текущая продолжительность цикла"
+    #     )
+    #     await state.set_state(RegistrationStates.waiting_for_hayd_average)
+    # else:
+    #     # Для мужчин сразу показываем подтверждение
+    #     await show_confirmation(message, state)
+    
+    await show_confirmation(message, state)
 
 @router.message(RegistrationStates.waiting_for_hayd_average)
 async def process_hayd_average(message: Message, state: FSMContext):
@@ -248,7 +250,7 @@ async def show_confirmation(message: Message, state: FSMContext):
         f"🏙️ Город: {data['city']}\n"
     )
     
-    if data['gender'] == 'female':
+    if False and data['gender'] == 'female':
         confirmation_text += f"\n🌙 Текущий хайд: {data.get('hayd_average_days', 0)} дней\n"
         confirmation_text += f"👶 Количество родов: {data.get('childbirth_count', 0)}\n"
         

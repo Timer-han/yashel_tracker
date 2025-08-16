@@ -8,18 +8,18 @@ logger = logging.getLogger(__name__)
 class FastingCalculationService:
     """Сервис для расчета пропущенных постов"""
     
-    def calculate_fasts_from_age(self, birth_date: date, fast_start_date: date,
-                                 gender: str = 'male',
-                                 hayd_average_days: float = None,
-                                 childbirth_data: List[Dict] = None) -> Dict[str, int]:
-        """Расчет постов от возраста совершеннолетия до начала соблюдения постов"""
-        adult_age = config.ADULT_AGE_FEMALE if gender == 'female' else config.ADULT_AGE_MALE
-        adult_date = birth_date.replace(year=birth_date.year + adult_age)
+    # def calculate_fasts_from_age(self, birth_date: date, fast_start_date: date,
+    #                              gender: str = 'male',
+    #                              hayd_average_days: float = None,
+    #                              childbirth_data: List[Dict] = None) -> Dict[str, int]:
+    #     """Расчет постов от возраста совершеннолетия до начала соблюдения постов"""
+    #     adult_age = config.ADULT_AGE_FEMALE if gender == 'female' else config.ADULT_AGE_MALE
+    #     adult_date = birth_date.replace(year=birth_date.year + adult_age)
         
-        return self.calculate_fasts_between_dates(
-            adult_date, fast_start_date, gender, 
-            hayd_average_days, childbirth_data
-        )
+    #     return self.calculate_fasts_between_dates(
+    #         adult_date, fast_start_date, gender, 
+    #         hayd_average_days, childbirth_data
+    #     )
     
     def calculate_fasts_between_dates(self, start_date: date, end_date: date,
                                       gender: str = 'male',
@@ -41,7 +41,7 @@ class FastingCalculationService:
         excluded_days = 0
         details = ""
         
-        if gender == 'female':
+        if False and gender == 'female':
             excluded_days = self._calculate_excluded_fast_days_for_women(
                 start_date, end_date, hayd_average_days, childbirth_data
             )

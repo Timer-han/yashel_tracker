@@ -20,7 +20,7 @@ class User(BaseModel):
         fasting_missed_days: int = 0,
         fasting_completed_days: int = 0,
         hayd_average_days: Optional[float] = None,
-        childbirth_count: int = 0,
+        childbirth_count: int = -1,
         childbirth_data: Optional[str] = None
     ):
         super().__init__()

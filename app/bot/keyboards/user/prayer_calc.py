@@ -5,10 +5,10 @@ def get_calculation_method_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура выбора метода расчета"""
     builder = InlineKeyboardBuilder()
     
-    builder.add(InlineKeyboardButton(
-        text="🔢 От 12 лет до начала намазов", 
-        callback_data="calc_from_age"
-    ))
+    # builder.add(InlineKeyboardButton(
+    #     text="🔢 От 12 лет до начала намазов", 
+    #     callback_data="calc_from_age"
+    # ))
     builder.add(InlineKeyboardButton(
         text="📅 Между двумя датами", 
         callback_data="calc_between_dates"
@@ -22,9 +22,36 @@ def get_calculation_method_keyboard() -> InlineKeyboardMarkup:
         callback_data="calc_manual"
     ))
     
+    builder.adjust(2, 1)
+    
+    return builder.as_markup()
+
+
+def get_female_calculation_method_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура выбора метода расчета"""
+    builder = InlineKeyboardBuilder()
+    
+    # builder.add(InlineKeyboardButton(
+    #     text="🔢 От 12 лет до начала намазов", 
+    #     callback_data="calc_from_age"
+    # ))
+    # builder.add(InlineKeyboardButton(
+    #     text="📅 Между двумя датами", 
+    #     callback_data="calc_between_dates"
+    # ))
+    # builder.add(InlineKeyboardButton(
+    #     text="📝 Задать даты совершеннолетия", 
+    #     callback_data="calc_custom_adult"
+    # ))
+    builder.add(InlineKeyboardButton(
+        text="✋ Ввести вручную", 
+        callback_data="calc_manual"
+    ))
+    
     builder.adjust(1)
     
     return builder.as_markup()
+
 
 # def get_prayer_types_keyboard() -> InlineKeyboardMarkup:
 #     """Клавиатура с типами намазов для ручного ввода"""

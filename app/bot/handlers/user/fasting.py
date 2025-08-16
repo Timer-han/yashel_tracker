@@ -5,8 +5,8 @@ from aiogram.fsm.context import FSMContext
 from ...keyboards.user.fasting import (
     get_fasting_keyboard, 
     get_fasting_calculation_method_keyboard,
-    get_fasting_confirmation_keyboard,
-    get_fasting_action_keyboard
+    get_female_fasting_calculation_method_keyboard,
+    get_fasting_confirmation_keyboard
 )
 from ....core.services.fasting_calculation_service import FastingCalculationService
 from ....core.services.user_service import UserService
@@ -64,54 +64,67 @@ async def start_fast_calculation(callback: CallbackQuery, state: FSMContext):
         await callback.answer("❌ Сначала пройдите регистрацию", show_alert=True)
         return
     
+    if user.gender == 'male':
+        reply_markup = get_fasting_calculation_method_keyboard()
+    else:
+        reply_markup = get_female_fasting_calculation_method_keyboard()
+        
     await callback.message.edit_text(
         "🔢 **Расчет пропущенных постов**\n\n"
         "Выберите способ расчета:",
-        reply_markup=get_fasting_calculation_method_keyboard(),
+        reply_markup=reply_markup,
         parse_mode="Markdown"
     )
     await state.set_state(FastingStates.choosing_method)
 
-@router.callback_query(FastingStates.choosing_method, F.data == "fast_calc_from_age")
-async def calc_fasts_from_age(callback: CallbackQuery, state: FSMContext):
-    """Расчет постов от совершеннолетия"""
-    await callback.message.edit_text(
-        "📅 **Расчет от совершеннолетия**\n\n"
-        "Этот метод рассчитает посты от возраста совершеннолетия до даты, "
-        "когда вы начали регулярно соблюдать посты Рамадана.\n\n"
-        "Введите дату, когда вы начали регулярно соблюдать посты в формате ДД.ММ.ГГГГ:\n"
-        "Например: 01.05.2020"
-    )
-    await state.set_state(FastingStates.waiting_for_fast_start_date)
+# @router.callback_query(FastingStates.choosing_method, F.data == "fast_calc_from_age")
+# async def calc_fasts_from_age(callback: CallbackQuery, state: FSMContext):
+#     """Расчет постов от совершеннолетия"""
+#     await callback.message.edit_text(
+#         "📅 **Расчет от совершеннолетия**\n\n"
+#         "Этот метод рассчитает посты от возраста совершеннолетия до даты, "
+#         "когда вы начали регулярно соблюдать посты Рамадана.\n\n"
+#         "Введите дату, когда вы начали регулярно соблюдать посты в формате ДД.ММ.ГГГГ:\n"
+#         "Например: 01.05.2020"
+#     )
+#     await state.set_state(FastingStates.waiting_for_fast_start_date)
 
-@router.message(FastingStates.waiting_for_fast_start_date)
-async def process_fast_start_date(message: Message, state: FSMContext):
-    """Обработка даты начала соблюдения постов (от совершеннолетия)"""
-    fast_start_date = parse_date(message.text)
-    if not fast_start_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
-        return
+# @router.message(FastingStates.waiting_for_fast_start_date)
+# async def process_fast_start_date(message: Message, state: FSMContext):
+#     """Обработка даты начала соблюдения постов (от совершеннолетия)"""
+#     fast_start_date = parse_date(message.text)
+#     if not fast_start_date:
+#         await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+#         return
     
-    user = await user_service.get_or_create_user(message.from_user.id)
+#     user = await user_service.get_or_create_user(message.from_user.id)
     
-    if not user.birth_date:
-        await message.answer("❌ Для этого расчета нужна дата рождения. Проверьте регистрацию.")
-        return
+#     if not user.birth_date:
+#         await message.answer("❌ Для этого расчета нужна дата рождения. Проверьте регистрацию.")
+#         return
     
-    # Рассчитываем посты
-    result = fasting_calc_service.calculate_fasts_from_age(
-        birth_date=user.birth_date,
-        fast_start_date=fast_start_date,
-        gender=user.gender or 'male',
-        hayd_average_days=user.hayd_average_days,
-        childbirth_data=user.get_childbirth_info()
-    )
+#     # Рассчитываем посты
+#     result = fasting_calc_service.calculate_fasts_from_age(
+#         birth_date=user.birth_date,
+#         fast_start_date=fast_start_date,
+#         gender=user.gender or 'male',
+#         hayd_average_days=user.hayd_average_days,
+#         childbirth_data=user.get_childbirth_info()
+#     )
     
-    await _show_calculation_result(message, result, state, fast_start_date)
+#     await _show_calculation_result(message, result, state, fast_start_date)
 
 @router.callback_query(FastingStates.choosing_method, F.data == "fast_calc_between_dates")
 async def calc_fasts_between_dates(callback: CallbackQuery, state: FSMContext):
     """Расчет постов между двумя датами"""
+    user = await user_service.get_or_create_user(callback.from_user.id)
+    if user.gender == 'female':
+        await callback.answer(
+            "❌ Для женщин этот метод не подходит.\n"
+            "Используйте другой метод расчета постов.",
+            reply_markup=get_female_fasting_calculation_method_keyboard()
+        )
+
     await callback.message.edit_text(
         "📅 **Расчет между датами**\n\n"
         "Введите начальную дату (с какой даты считать пропущенные посты) в формате ДД.ММ.ГГГГ:\n"
@@ -339,12 +352,12 @@ async def handle_fasting_actions(callback: CallbackQuery):
         else:
             stats_text += "🎉 Все посты восполнены! Машаа Ллах!"
         
-        if user.gender == 'female' and user.hayd_average_days:
-            stats_text += f"\n\n📋 **Примечание для женщин:**\n"
-            stats_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
-            stats_text += f"• Расчет учитывает дни хайда и нифаса\n"
-            if user.childbirth_count > 0:
-                stats_text += f"• Количество родов: {user.childbirth_count}\n"
+        # if user.gender == 'female' and user.hayd_average_days:
+        #     stats_text += f"\n\n📋 **Примечание для женщин:**\n"
+        #     stats_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
+        #     stats_text += f"• Расчет учитывает дни хайда и нифаса\n"
+        #     if user.childbirth_count > 0:
+        #         stats_text += f"• Количество родов: {user.childbirth_count}\n"
                 
         stats_text += "\n\n🤲 Да примет Аллах ваши усилия!"
         

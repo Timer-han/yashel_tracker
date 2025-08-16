@@ -60,7 +60,7 @@ class WomenCalculationService:
                 total_fast_days += days_in_ramadan
                 
                 # Для женщин считаем хайд и нифас в этот Рамадан
-                if gender == 'female':
+                if False and gender == 'female':
                     hayd_in_ramadan, nifas_in_ramadan = self._calculate_excluded_days_in_period(
                         actual_start, actual_end, hayd_average_days, births
                     )

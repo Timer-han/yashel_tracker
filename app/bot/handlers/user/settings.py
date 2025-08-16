@@ -173,50 +173,51 @@ async def export_data(callback: CallbackQuery):
         export_text += f"• Прогресс восполнения: {fast_progress:.1f}%\n"
     
     # Специальная информация для женщин
-    if user.gender == 'female':
-        export_text += f"\n**👩 Информация для женщин:**\n"
-        
-        if user.hayd_average_days:
-            export_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
-        else:
-            export_text += f"• Продолжительность хайда: не указана\n"
-        
-        export_text += f"• Количество родов: {user.childbirth_count or 0}\n"
-        
-        # Детальная информация о родах
-        if user.childbirth_count and user.childbirth_count > 0:
-            childbirth_info = user.get_childbirth_info()
-            if childbirth_info:
-                export_text += f"\n**👶 Детали родов:**\n"
-                for i, birth in enumerate(childbirth_info, 1):
-                    birth_date = birth.get('date', 'неизвестно')
-                    nifas_days = birth.get('nifas_days', 0)
-                    hayd_before = birth.get('hayd_before', 0)
-                    
-                    export_text += (
-                        f"• {i}-е роды:\n"
-                        f"  - Дата: {birth_date}\n"
-                        f"  - Нифас: {nifas_days} дней\n"
-                        f"  - Хайд до родов: {hayd_before} дней\n"
-                    )
-        
-        # # Дополнительные расчеты для женщин
-        # if user.birth_date and user.hayd_average_days:
-        #     from ....core.services.calculation_service import CalculationService
-        #     calc_service = CalculationService()
-        #     age = calc_service.calculate_age(user.birth_date)
+    if False:
+        if user.gender == 'female':
+            export_text += f"\n**👩 Информация для женщин:**\n"
             
-        #     # Примерное количество циклов за репродуктивный период
-        #     reproductive_years = max(0, age - 9)  # с 9 лет (совершеннолетие для девочек)
-        #     approximate_cycles = reproductive_years * 12  # примерно 12 циклов в год
+            if user.hayd_average_days:
+                export_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
+            else:
+                export_text += f"• Продолжительность хайда: не указана\n"
             
-        #     export_text += (
-        #         f"\n**📊 Дополнительные расчеты:**\n"
-        #         f"• Возраст: {age} лет\n"
-        #         f"• Репродуктивный период: ~{reproductive_years} лет\n"
-        #         f"• Примерное количество циклов: ~{approximate_cycles}\n"
-        #     )
-    
+            export_text += f"• Количество родов: {user.childbirth_count or 0}\n"
+            
+            # Детальная информация о родах
+            if user.childbirth_count and user.childbirth_count > 0:
+                childbirth_info = user.get_childbirth_info()
+                if childbirth_info:
+                    export_text += f"\n**👶 Детали родов:**\n"
+                    for i, birth in enumerate(childbirth_info, 1):
+                        birth_date = birth.get('date', 'неизвестно')
+                        nifas_days = birth.get('nifas_days', 0)
+                        hayd_before = birth.get('hayd_before', 0)
+                        
+                        export_text += (
+                            f"• {i}-е роды:\n"
+                            f"  - Дата: {birth_date}\n"
+                            f"  - Нифас: {nifas_days} дней\n"
+                            f"  - Хайд до родов: {hayd_before} дней\n"
+                        )
+            
+            # Дополнительные расчеты для женщин
+            if user.birth_date and user.hayd_average_days:
+                from ....core.services.calculation_service import CalculationService
+                calc_service = CalculationService()
+                age = calc_service.calculate_age(user.birth_date)
+                
+                # Примерное количество циклов за репродуктивный период
+                reproductive_years = max(0, age - 9)  # с 9 лет (совершеннолетие для девочек)
+                approximate_cycles = reproductive_years * 12  # примерно 12 циклов в год
+                
+                export_text += (
+                    f"\n**📊 Дополнительные расчеты:**\n"
+                    f"• Возраст: {age} лет\n"
+                    f"• Репродуктивный период: ~{reproductive_years} лет\n"
+                    f"• Примерное количество циклов: ~{approximate_cycles}\n"
+                )
+
     # Системная информация
     export_text += (
         f"\n**⚙️ Системная информация:**\n"

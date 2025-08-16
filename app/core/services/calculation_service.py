@@ -8,20 +8,20 @@ logger = logging.getLogger(__name__)
 class CalculationService:
     """Сервис для расчета количества намазов"""
     
-    def calculate_prayers_from_age(self, birth_date: date, prayer_start_date: date,
-                                   gender: str = 'male',
-                                   hayd_average_days: float = None,
-                                   childbirth_data: List[Dict] = None) -> Dict[str, int]:
-        """Расчет намазов от возраста совершеннолетия до начала совершения намазов"""
-        adult_age = config.ADULT_AGE_FEMALE if gender == 'female' else config.ADULT_AGE_MALE
+    # def calculate_prayers_from_age(self, birth_date: date, prayer_start_date: date,
+    #                                gender: str = 'male',
+    #                                hayd_average_days: float = None,
+    #                                childbirth_data: List[Dict] = None) -> Dict[str, int]:
+    #     """Расчет намазов от возраста совершеннолетия до начала совершения намазов"""
+    #     adult_age = config.ADULT_AGE_FEMALE if gender == 'female' else config.ADULT_AGE_MALE
         
-        # Дата совершеннолетия
-        adult_date = birth_date.replace(year=birth_date.year + adult_age)
+    #     # Дата совершеннолетия
+    #     adult_date = birth_date.replace(year=birth_date.year + adult_age)
         
-        return self.calculate_prayers_between_dates(
-            adult_date, prayer_start_date, gender, 
-            hayd_average_days, childbirth_data
-        )
+    #     return self.calculate_prayers_between_dates(
+    #         adult_date, prayer_start_date, gender, 
+    #         hayd_average_days, childbirth_data
+    #     )
     
     def calculate_prayers_between_dates(self, start_date: date, end_date: date,
                                         gender: str = 'male',
@@ -35,7 +35,7 @@ class CalculationService:
         total_days = (end_date - start_date).days
         
         # Для женщин вычитаем дни хайда и нифаса
-        if gender == 'female':
+        if False and gender == 'female':
             excluded_days = self._calculate_excluded_days_for_women(
                 start_date, end_date, hayd_average_days, childbirth_data
             )

@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from datetime import date, datetime
 import logging
 
-from ...keyboards.user.prayer_calc import get_calculation_method_keyboard, get_prayer_types_keyboard
+from ...keyboards.user.prayer_calc import get_calculation_method_keyboard, get_female_calculation_method_keyboard
 from ...keyboards.user.main_menu import get_main_menu_keyboard
 from ...keyboards.user.prayer_calc import get_prayer_type_selection_keyboard
 from ....core.services.calculation_service import CalculationService
@@ -25,68 +25,74 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
     """Начало расчета намазов"""
     await state.clear()
     
+    user = await user_service.get_or_create_user(message.from_user.id)
+    if user.gender == 'male':
+        reply_markup = get_calculation_method_keyboard()
+    else:
+        reply_markup = get_female_calculation_method_keyboard()
+    
     await message.answer(
         "🔢 Выберите способ расчета пропущенных намазов:",
-        reply_markup=get_calculation_method_keyboard()
+        reply_markup=reply_markup
     )
     await state.set_state(PrayerCalculationStates.choosing_method)
 
-@router.callback_query(PrayerCalculationStates.choosing_method, F.data == "calc_from_age")
-async def calc_from_age(callback: CallbackQuery, state: FSMContext):
-    """Расчет от возраста совершеннолетия"""
-    await callback.message.edit_text(
-        "📅 Этот метод рассчитает намазы от совершеннолетия до даты, когда вы начали регулярно совершать намазы.\n\n"
-        "Введите дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
-        "Например: 01.01.2020"
-    )
-    await state.set_state(PrayerCalculationStates.waiting_for_prayer_start_date)
+# @router.callback_query(PrayerCalculationStates.choosing_method, F.data == "calc_from_age")
+# async def calc_from_age(callback: CallbackQuery, state: FSMContext):
+#     """Расчет от возраста совершеннолетия"""
+#     await callback.message.edit_text(
+#         "📅 Этот метод рассчитает намазы от совершеннолетия до даты, когда вы начали регулярно совершать намазы.\n\n"
+#         "Введите дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
+#         "Например: 01.01.2020"
+#     )
+#     await state.set_state(PrayerCalculationStates.waiting_for_prayer_start_date)
 
-@router.message(PrayerCalculationStates.waiting_for_prayer_start_date)
-async def process_prayer_start_date(message: Message, state: FSMContext):
-    """Обработка даты начала совершения намазов"""
-    prayer_start_date = parse_date(message.text)
-    if not prayer_start_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
-        return
+# @router.message(PrayerCalculationStates.waiting_for_prayer_start_date)
+# async def process_prayer_start_date(message: Message, state: FSMContext):
+#     """Обработка даты начала совершения намазов"""
+#     prayer_start_date = parse_date(message.text)
+#     if not prayer_start_date:
+#         await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+#         return
     
-    # Получаем данные пользователя
-    user = await user_service.get_or_create_user(message.from_user.id)
-    if not user.birth_date:
-        await message.answer("❌ Для этого расчета нужна ваша дата рождения. Пройдите регистрацию сначала.")
-        return
+#     # Получаем данные пользователя
+#     user = await user_service.get_or_create_user(message.from_user.id)
+#     if not user.birth_date:
+#         await message.answer("❌ Для этого расчета нужна ваша дата рождения. Пройдите регистрацию сначала.")
+#         return
     
-    # Рассчитываем намазы с учетом пола и данных о хайде/нифасе
-    prayers_data = calculation_service.calculate_prayers_from_age(
-        birth_date=user.birth_date,
-        prayer_start_date=prayer_start_date,
-        gender=user.gender or 'male',
-        hayd_average_days=user.hayd_average_days,
-        childbirth_data=user.get_childbirth_info()
-    )
+#     # Рассчитываем намазы с учетом пола и данных о хайде/нифасе
+#     prayers_data = calculation_service.calculate_prayers_from_age(
+#         birth_date=user.birth_date,
+#         prayer_start_date=prayer_start_date,
+#         gender=user.gender or 'male',
+#         hayd_average_days=user.hayd_average_days,
+#         childbirth_data=user.get_childbirth_info()
+#     )
     
-    # Сохраняем результат
-    await prayer_service.set_user_prayers(message.from_user.id, prayers_data)
+#     # Сохраняем результат
+#     await prayer_service.set_user_prayers(message.from_user.id, prayers_data)
     
-    # Показываем результат
-    total_prayers = sum(prayers_data.values())
-    adult_age = config.ADULT_AGE_FEMALE if user.gender == 'female' else config.ADULT_AGE_MALE
-    result_text = (
-        f"✅ Расчет завершен!\n\n"
-        f"📊 Рассчитано намазов от {adult_age} лет "
-        f"до {format_date(prayer_start_date)}:\n\n"
-        f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
-        "Детализация:\n"
-    )
+#     # Показываем результат
+#     total_prayers = sum(prayers_data.values())
+#     adult_age = config.ADULT_AGE_FEMALE if user.gender == 'female' else config.ADULT_AGE_MALE
+#     result_text = (
+#         f"✅ Расчет завершен!\n\n"
+#         f"📊 Рассчитано намазов от {adult_age} лет "
+#         f"до {format_date(prayer_start_date)}:\n\n"
+#         f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+#         "Детализация:\n"
+#     )
     
-    for prayer_type, count in prayers_data.items():
-        if count > 0:
-            prayer_name = config.PRAYER_TYPES[prayer_type]
-            result_text += f"• {prayer_name}: {count}\n"
+#     for prayer_type, count in prayers_data.items():
+#         if count > 0:
+#             prayer_name = config.PRAYER_TYPES[prayer_type]
+#             result_text += f"• {prayer_name}: {count}\n"
     
-    result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+#     result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
     
-    await message.answer(result_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
-    await state.clear()
+#     await message.answer(result_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+#     await state.clear()
 
 @router.callback_query(PrayerCalculationStates.choosing_method, F.data == "calc_between_dates")
 async def calc_between_dates(callback: CallbackQuery, state: FSMContext):
