@@ -41,9 +41,20 @@ class DatabaseConnection:
                     fasting_completed_days INTEGER DEFAULT 0,
                     hayd_average_days REAL DEFAULT NULL,
                     childbirth_count INTEGER DEFAULT 0,
-                    childbirth_data TEXT DEFAULT NULL
+                    childbirth_data TEXT DEFAULT NULL,
+                    daily_notifications_enabled INTEGER DEFAULT 1
                 )
             """)
+            
+            # Добавляем поле daily_notifications_enabled если его нет (для существующих БД)
+            try:
+                await connection.execute("""
+                    ALTER TABLE users ADD COLUMN daily_notifications_enabled INTEGER DEFAULT 1
+                """)
+                logger.info("Добавлено поле daily_notifications_enabled в таблицу users")
+            except:
+                # Поле уже существует
+                pass
             
             # Создание таблицы намазов
             await connection.execute("""

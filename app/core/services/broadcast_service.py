@@ -13,11 +13,12 @@ class BroadcastService:
         self.calc_service = CalculationService()
     
     async def send_broadcast(self, message_text: str, filters: Dict[str, Any] = None, 
-                           photo: str = None, video: str = None) -> Dict[str, int]:
+                           photo: str = None, video: str = None,
+                           exclude_disabled_notifications: bool = False) -> Dict[str, int]:
         """Отправка рассылки с фильтрами"""
         
         # Получаем пользователей по фильтрам
-        users = await self._get_filtered_users(filters or {})
+        users = await self._get_filtered_users(filters or {}, exclude_disabled_notifications)
         
         if not users:
             return {
@@ -73,7 +74,8 @@ class BroadcastService:
             'total_users': len(users)
         }
     
-    async def _get_filtered_users(self, filters: Dict[str, Any]) -> List:
+    async def _get_filtered_users(self, filters: Dict[str, Any], 
+                                  exclude_disabled_notifications: bool = False) -> List:
         """Получение пользователей по фильтрам"""
         
         # Базовая фильтрация
@@ -92,7 +94,8 @@ class BroadcastService:
             gender=gender,
             city=city,
             min_age=min_age,
-            max_age=max_age
+            max_age=max_age,
+            exclude_disabled_notifications=exclude_disabled_notifications
         )
         
         return users

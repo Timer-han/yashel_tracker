@@ -31,6 +31,7 @@ class UserService:
             hayd_average_days=hayd_average_days,
             childbirth_count=childbirth_count,
             childbirth_data=childbirth_data
+            # daily_notifications_enabled остается дефолтным (1)
         )
 
     async def get_or_create_user(self, telegram_id: int, username: str = None) -> User:
@@ -44,7 +45,8 @@ class UserService:
             user = User(
                 telegram_id=telegram_id,
                 username=username,
-                role=role
+                role=role,
+                daily_notifications_enabled=1  # По умолчанию включены
             )
             await self.user_repo.create_user(user)
         
@@ -56,4 +58,21 @@ class UserService:
         return await self.user_repo.update_user(
             telegram_id=telegram_id,
             last_activity=datetime.now()
+        )
+    
+    async def toggle_notifications(self, telegram_id: int) -> bool:
+        """Переключение настройки уведомлений"""
+        user = await self.get_or_create_user(telegram_id)
+        new_state = 0 if user.notifications_enabled else 1
+        
+        return await self.user_repo.update_user(
+            telegram_id=telegram_id,
+            daily_notifications_enabled=new_state
+        )
+    
+    async def set_notifications(self, telegram_id: int, enabled: bool) -> bool:
+        """Установка настройки уведомлений"""
+        return await self.user_repo.update_user(
+            telegram_id=telegram_id,
+            daily_notifications_enabled=1 if enabled else 0
         )

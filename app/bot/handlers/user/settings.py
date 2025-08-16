@@ -4,7 +4,11 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime
 from app import __version__
 
-from ...keyboards.user.settings import get_settings_menu_keyboard, get_change_confirmation_keyboard
+from ...keyboards.user.settings import (
+    get_settings_menu_keyboard, 
+    get_change_confirmation_keyboard,
+    get_notifications_confirmation_keyboard
+)
 from ...keyboards.user.registration import get_gender_keyboard, get_gender_inline_keyboard
 from ....core.config import escape_markdown
 from ....core.services.user_service import UserService
@@ -26,13 +30,14 @@ async def show_settings(message: Message):
         f"👤 Имя: {escape_markdown(user.display_name)}\n"
         f"👤 Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"📅 Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
-        f"🏙️ Город: {user.city or 'Не указан'}\n\n"
+        f"🏙️ Город: {user.city or 'Не указан'}\n"
+        f"🔔 Ежедневные уведомления: {'Включены' if user.notifications_enabled else 'Отключены'}\n\n"
         "Выберите, что хотите изменить:"
     )
     
     await message.answer(
         settings_text,
-        reply_markup=get_settings_menu_keyboard(),
+        reply_markup=get_settings_menu_keyboard(user.notifications_enabled),
         parse_mode="Markdown"
     )
 
@@ -120,6 +125,82 @@ async def process_new_city(message: Message, state: FSMContext):
     
     await state.clear()
 
+@router.callback_query(F.data == "disable_notifications")
+async def disable_notifications(callback: CallbackQuery):
+    """Отключение ежедневных уведомлений"""
+    await callback.message.edit_text(
+        "🔕 **Отключение ежедневных уведомлений**\n\n"
+        "Вы уверены, что хотите отключить ежедневные напоминания о восполнении намазов?\n\n"
+        "⚠️ Обратите внимание: административные рассылки вы будете получать по-прежнему.",
+        reply_markup=get_notifications_confirmation_keyboard(),
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "enable_notifications")
+async def enable_notifications(callback: CallbackQuery):
+    """Включение ежедневных уведомлений"""
+    await callback.message.edit_text(
+        "🔔 **Включение ежедневных уведомлений**\n\n"
+        "Вы уверены, что хотите включить ежедневные напоминания о восполнении намазов?\n\n"
+        "📱 Уведомления будут приходить каждый день в 20:00.",
+        reply_markup=get_notifications_confirmation_keyboard(),
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "confirm_notifications_change")
+async def confirm_notifications_change(callback: CallbackQuery):
+    """Подтверждение изменения настроек уведомлений"""
+    user = await user_service.get_or_create_user(callback.from_user.id)
+    
+    # Инвертируем текущее состояние
+    new_state = 0 if user.notifications_enabled else 1
+    
+    success = await user_service.user_repo.update_user(
+        telegram_id=callback.from_user.id,
+        daily_notifications_enabled=new_state
+    )
+    
+    if success:
+        if new_state == 1:
+            text = (
+                "✅ **Ежедневные уведомления включены!**\n\n"
+                "🔔 Вы будете получать напоминания о восполнении намазов каждый день в 20:00.\n\n"
+                "🤲 Пусть Аллах облегчит вам восполнение намазов!"
+            )
+        else:
+            text = (
+                "✅ **Ежедневные уведомления отключены!**\n\n"
+                "🔕 Вы больше не будете получать автоматические напоминания.\n\n"
+                "💡 Вы можете включить их в любое время через настройки."
+            )
+        
+        await callback.message.edit_text(text, parse_mode="Markdown")
+    else:
+        await callback.message.edit_text("❌ Ошибка при изменении настроек уведомлений.")
+
+@router.callback_query(F.data == "cancel_notifications_change")
+async def cancel_notifications_change(callback: CallbackQuery):
+    """Отмена изменения настроек уведомлений"""
+    user = await user_service.get_or_create_user(callback.from_user.id)
+    
+    settings_text = (
+        "⚙️ **Настройки профиля**\n\n"
+        f"👤 Имя: {escape_markdown(user.display_name)}\n"
+        f"👤 Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
+        f"📅 Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
+        f"🏙️ Город: {user.city or 'Не указан'}\n"
+        f"🔔 Ежедневные уведомления: {'Включены' if user.notifications_enabled else 'Отключены'}\n\n"
+        "Выберите, что хотите изменить:"
+    )
+    
+    await callback.message.edit_text(
+        settings_text,
+        reply_markup=get_settings_menu_keyboard(user.notifications_enabled),
+        parse_mode="Markdown"
+    )
+
 @router.callback_query(F.data == "export_data")
 async def export_data(callback: CallbackQuery):
     """Экспорт данных пользователя с полной информацией"""
@@ -135,7 +216,8 @@ async def export_data(callback: CallbackQuery):
         f"• Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
         f"• Город: {user.city or 'Не указан'}\n"
         f"• Роль: {user.role}\n"
-        f"• Дата регистрации: {user.created_at.strftime('%d.%m.%Y %H:%M') if hasattr(user, 'created_at') and user.created_at else 'Неизвестно'}\n\n"
+        f"• Дата регистрации: {user.created_at.strftime('%d.%m.%Y %H:%M') if hasattr(user, 'created_at') and user.created_at else 'Неизвестно'}\n"
+        f"• Ежедневные уведомления: {'Включены' if user.notifications_enabled else 'Отключены'}\n\n"
     )
     
     # Статистика намазов
@@ -273,7 +355,8 @@ async def reset_all_data_confirmed(callback: CallbackQuery):
         fasting_completed_days=0,
         hayd_average_days=None,
         childbirth_count=0,
-        childbirth_data=None
+        childbirth_data=None,
+        daily_notifications_enabled=1  # Сбрасываем на дефолтное значение
     )
     
     await callback.message.edit_text(

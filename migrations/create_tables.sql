@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     fasting_completed_days INTEGER DEFAULT 0,
     hayd_average_days REAL DEFAULT NULL,
     childbirth_count INTEGER DEFAULT 0,
-    childbirth_data TEXT DEFAULT NULL
+    childbirth_data TEXT DEFAULT NULL,
+    daily_notifications_enabled INTEGER DEFAULT 1
 );
 
 -- Таблица намазов
@@ -63,3 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id);
 CREATE INDEX IF NOT EXISTS idx_prayers_user_id ON prayers(user_id);
 CREATE INDEX IF NOT EXISTS idx_prayer_history_user_id ON prayer_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_admins_telegram_id ON admins(telegram_id);
+
+-- Миграция для существующих БД: добавление поля daily_notifications_enabled
+-- (эта команда будет игнорирована, если поле уже существует)
+ALTER TABLE users ADD COLUMN daily_notifications_enabled INTEGER DEFAULT 1;

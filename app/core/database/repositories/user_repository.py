@@ -17,8 +17,9 @@ class UserRepository:
                     telegram_id, username, gender, birth_date, city, role, 
                     is_registered, prayer_start_date, adult_date, last_activity,
                     fasting_missed_days, fasting_completed_days,
-                    hayd_average_days, childbirth_count, childbirth_data
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    hayd_average_days, childbirth_count, childbirth_data,
+                    daily_notifications_enabled
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 user.telegram_id, user.username, user.gender, 
                 user.birth_date.isoformat() if user.birth_date else None,
@@ -27,7 +28,8 @@ class UserRepository:
                 user.adult_date.isoformat() if user.adult_date else None,
                 user.last_activity,
                 user.fasting_missed_days, user.fasting_completed_days,
-                user.hayd_average_days, user.childbirth_count, user.childbirth_data
+                user.hayd_average_days, user.childbirth_count, user.childbirth_data,
+                user.daily_notifications_enabled
             ))
             await connection.commit()
             return cursor.lastrowid
@@ -63,13 +65,8 @@ class UserRepository:
                 fasting_completed_days=dict_row.get('fasting_completed_days', 0),
                 hayd_average_days=dict_row.get('hayd_average_days'),
                 childbirth_count=dict_row.get('childbirth_count', 0),
-                childbirth_data=dict_row.get('childbirth_data')
-
-                # fasting_missed_days=row['fasting_missed_days'] if 'fasting_missed_days' in row and row['fasting_missed_days'] else 0,
-                # fasting_completed_days=row['fasting_completed_days'] if 'fasting_completed_days' in row and row['fasting_completed_days'] else 0,
-                # hayd_average_days=row['hayd_average_days'] if 'hayd_average_days' in row and row['hayd_average_days'] else None,
-                # childbirth_count=row['childbirth_count'] if 'childbirth_count' in row and row['childbirth_count'] else 0,
-                # childbirth_data=row['childbirth_data'] if 'childbirth_data' in row and row['childbirth_data'] else None
+                childbirth_data=dict_row.get('childbirth_data'),
+                daily_notifications_enabled=dict_row.get('daily_notifications_enabled', 1)
             )
         finally:
             await connection.close()
@@ -101,7 +98,6 @@ class UserRepository:
             return True
         finally:
             await connection.close()
-    
 
                     # fasting_missed_days=dict_row.get('fasting_missed_days', 0),
                     # fasting_completed_days=dict_row.get('fasting_completed_days', 0),
@@ -109,7 +105,8 @@ class UserRepository:
                     # childbirth_count=dict_row.get('childbirth_count', 0),
                     # childbirth_data=dict_row.get('childbirth_data')
     async def get_users_by_filters(self, gender: str = None, city: str = None, 
-                                   min_age: int = None, max_age: int = None) -> List[User]:
+                                   min_age: int = None, max_age: int = None,
+                                   exclude_disabled_notifications: bool = False) -> List[User]:
         """Получение пользователей по фильтрам"""
         import logging
         logger = logging.getLogger(__name__)
@@ -128,6 +125,10 @@ class UserRepository:
             query += " AND city LIKE ?"
             params.append(f"%{city}%")
             logger.info(f"Добавлен фильтр по городу: {city}")
+        
+        if exclude_disabled_notifications:
+            query += " AND daily_notifications_enabled = 1"
+            logger.info("Исключены пользователи с отключенными уведомлениями")
         
         logger.info(f"Финальный запрос: {query}")
         logger.info(f"Параметры: {params}")
@@ -157,7 +158,8 @@ class UserRepository:
                         fasting_completed_days=dict_row.get('fasting_completed_days', 0),
                         hayd_average_days=dict_row.get('hayd_average_days'),
                         childbirth_count=dict_row.get('childbirth_count', 0),
-                        childbirth_data=dict_row.get('childbirth_data')
+                        childbirth_data=dict_row.get('childbirth_data'),
+                        daily_notifications_enabled=dict_row.get('daily_notifications_enabled', 1)
                     )
                     
                     # Фильтрация по возрасту на уровне Python
@@ -195,3 +197,7 @@ class UserRepository:
     async def get_all_registered_users(self) -> List[User]:
         """Получение всех зарегистрированных пользователей"""
         return await self.get_users_by_filters()
+    
+    async def get_users_with_notifications_enabled(self) -> List[User]:
+        """Получение пользователей с включенными уведомлениями"""
+        return await self.get_users_by_filters(exclude_disabled_notifications=True)
