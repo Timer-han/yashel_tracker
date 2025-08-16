@@ -25,8 +25,8 @@ def get_moderator_menu_keyboard() -> ReplyKeyboardMarkup:
     
     # Обычные функции пользователя
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
-    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
     builder.add(KeyboardButton(text="📿 Посты"))
+    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
     builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
     # Функции модератора
@@ -46,8 +46,8 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     
     # Обычные функции пользователя
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
-    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
     builder.add(KeyboardButton(text="📿 Посты"))
+    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
     builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
     # Функции модератора
