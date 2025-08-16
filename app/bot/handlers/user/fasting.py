@@ -130,7 +130,8 @@ async def calc_fasts_between_dates(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         "📅 *Расчет между датами*\n\n"
         "Введи количество пропущенных лет:\n"
-        "Например: 4"
+        "Например: 4",
+        parse_mode='Markdown'
     )
     await state.set_state(FastingStates.waiting_for_fast_year_count)
 
@@ -205,7 +206,8 @@ async def calc_fasts_manual(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         "✋ *Ручной ввод количества*\n\n"
         "Введите количество пропущенных дней поста:\n\n"
-        "Например: 120"
+        "Например: 120",
+        parse_mode='Markdown'
     )
     await state.set_state(FastingStates.waiting_for_manual_days)
 
