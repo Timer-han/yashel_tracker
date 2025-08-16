@@ -41,7 +41,7 @@ class Config:
     NIFAS_MAX_DAYS: int = 40
     
     # Время для ежедневных напоминаний (час в формате 24ч)
-    DAILY_REMINDER_HOUR: int = 20  # 20:00
+    DAILY_REMINDER_HOUR: int = 17  # 20:00
     
     # Виды намазов
     PRAYER_TYPES = {

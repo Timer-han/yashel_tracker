@@ -24,7 +24,7 @@ def start_scheduler():
     # Дополнительная задача для отправки ежедневной статистики
     scheduler.add_job(
         send_daily_reminders,
-        CronTrigger(hour=22, minute=0),  # 22:00 ежедневно
+        CronTrigger(hour=19, minute=0),  # 22:00 ежедневно
         id='daily_statistics'
     )
     
