@@ -196,7 +196,8 @@ async def process_prayer_type_selection(callback: CallbackQuery, state: FSMConte
     await callback.message.edit_text(
         f"🕌 *{prayer_name}*\n\n"
         f"Введи количество пропущенных намазов '{prayer_name}':\n\n"
-        "Например: 50"
+        "Например: 50",
+        parse_mode="Markdown"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_manual_prayer_count)
 
