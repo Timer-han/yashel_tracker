@@ -19,7 +19,7 @@ async def cmd_start(message: Message, state: FSMContext):
     
     user = await user_service.get_or_create_user(
         telegram_id=message.from_user.id,
-        username=message.from_user.username,
+        username=message.from_user.username
     )
     
     if not user.is_registered:
@@ -44,7 +44,7 @@ async def cmd_start(message: Message, state: FSMContext):
             welcome_text = "🏠 Главное меню"
         
         await message.answer(
-            f"🕌 Ассаляму алейкум, {user.username or 'брат' if user.gender == 'male' else 'сестра'}!\n\n"
+            f"🕌 Ассаляму алейкум, {user.display_name}!\n\n"
             f"{welcome_text}",
             reply_markup=keyboard
         )

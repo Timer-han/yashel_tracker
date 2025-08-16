@@ -61,3 +61,15 @@ class User(BaseModel):
     def set_childbirth_info(self, info: List[Dict]):
         """Сохранение информации о родах в JSON"""
         self.childbirth_data = json.dumps(info)
+        
+    @property
+    def display_name(self) -> str:
+        """Отображаемое имя пользователя"""
+        if self.username:
+            return self.username
+        elif self.gender == 'male':
+            return 'брат'
+        elif self.gender == 'female':
+            return 'сестра' 
+        else:
+            return 'пользователь'

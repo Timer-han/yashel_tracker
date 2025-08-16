@@ -4,6 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def escape_markdown(text):
+    special_chars = '\\`*_{}[]()#+-.!|>~^='
+    for char in special_chars:
+        text = text.replace(char, '\\' + char)
+    return text
+
+
 class Config:
     """Конфигурация приложения"""
     

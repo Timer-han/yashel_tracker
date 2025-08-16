@@ -50,14 +50,14 @@ class UserRepository:
                 birth_date=datetime.datetime.strptime(row['birth_date'], "%Y-%m-%d").date() if row['birth_date'] else None,
                 city=row['city'],
                 role=row['role'],
-                is_registered=row['is_registered'],
+                is_registered=bool(row['is_registered']),
                 prayer_start_date=datetime.datetime.strptime(row['prayer_start_date'], "%Y-%m-%d").date() if row['prayer_start_date'] else None,
                 adult_date=datetime.datetime.strptime(row['adult_date'], "%Y-%m-%d").date() if row['adult_date'] else None,
                 fasting_missed_days=row['fasting_missed_days'] if 'fasting_missed_days' in row and row['fasting_missed_days'] else 0,
                 fasting_completed_days=row['fasting_completed_days'] if 'fasting_completed_days' in row and row['fasting_completed_days'] else 0,
                 hayd_average_days=row['hayd_average_days'] if 'hayd_average_days' in row and row['hayd_average_days'] else None,
                 childbirth_count=row['childbirth_count'] if 'childbirth_count' in row and row['childbirth_count'] else 0,
-                childbirth_data=row['childbirth_data'] if 'childbirth_data' in row and row['childbirth_data'] else '\{\}'
+                childbirth_data=row['childbirth_data'] if 'childbirth_data' in row and row['childbirth_data'] else None
             )
         finally:
             await connection.close()
@@ -72,6 +72,9 @@ class UserRepository:
             if key in kwargs and kwargs[key] is not None:
                 if hasattr(kwargs[key], 'isoformat'):
                     kwargs[key] = kwargs[key].isoformat()
+        
+        # Добавляем updated_at
+        kwargs['updated_at'] = datetime.datetime.now().isoformat()
             
         set_clause = ", ".join([f"{key} = ?" for key in kwargs.keys()])
         values = list(kwargs.values()) + [telegram_id]
@@ -79,7 +82,7 @@ class UserRepository:
         connection = await db_manager.get_connection()
         try:
             await connection.execute(f"""
-                UPDATE users SET {set_clause}, updated_at = CURRENT_TIMESTAMP
+                UPDATE users SET {set_clause}
                 WHERE telegram_id = ?
             """, values)
             await connection.commit()
@@ -98,8 +101,8 @@ class UserRepository:
             params.append(gender)
         
         if city:
-            query += " AND city = ?"
-            params.append(city)
+            query += " AND city LIKE ?"
+            params.append(f"%{city}%")
         
         connection = await db_manager.get_connection()
         try:
@@ -108,22 +111,36 @@ class UserRepository:
             
             users = []
             for row in rows:
-                users.append(User(
+                user = User(
                     telegram_id=row['telegram_id'],
                     username=row['username'],
                     gender=row['gender'],
                     birth_date=datetime.datetime.strptime(row['birth_date'], "%Y-%m-%d").date() if row['birth_date'] else None,
                     city=row['city'],
                     role=row['role'],
-                    is_registered=row['is_registered'],
+                    is_registered=bool(row['is_registered']),
                     prayer_start_date=datetime.datetime.strptime(row['prayer_start_date'], "%Y-%m-%d").date() if row['prayer_start_date'] else None,
                     adult_date=datetime.datetime.strptime(row['adult_date'], "%Y-%m-%d").date() if row['adult_date'] else None,
                     fasting_missed_days=row['fasting_missed_days'] if 'fasting_missed_days' in row and row['fasting_missed_days'] else 0,
                     fasting_completed_days=row['fasting_completed_days'] if 'fasting_completed_days' in row and row['fasting_completed_days'] else 0,
                     hayd_average_days=row['hayd_average_days'] if 'hayd_average_days' in row and row['hayd_average_days'] else None,
                     childbirth_count=row['childbirth_count'] if 'childbirth_count' in row and row['childbirth_count'] else 0,
-                    childbirth_data=row['childbirth_data'] if 'childbirth_data' in row and row['childbirth_data'] else '\{\}'
-                ))
+                    childbirth_data=row['childbirth_data'] if 'childbirth_data' in row and row['childbirth_data'] else None
+                )
+                
+                # Фильтрация по возрасту на уровне Python
+                if (min_age is not None or max_age is not None) and user.birth_date:
+                    from ...services.calculation_service import CalculationService
+                    calc_service = CalculationService()
+                    age = calc_service.calculate_age(user.birth_date)
+                    
+                    if min_age is not None and age < min_age:
+                        continue
+                    if max_age is not None and age > max_age:
+                        continue
+                
+                users.append(user)
+                
             return users
         finally:
             await connection.close()

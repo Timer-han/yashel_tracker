@@ -51,6 +51,7 @@ async def process_filter(callback: CallbackQuery, state: FSMContext):
             "📍 Введите название города для фильтрации:"
         )
         await state.update_data(filters=current_filters, waiting_for='city')
+        await state.set_state(ModeratorStates.broadcast_message)
         return
         
     elif filter_type == "age":
@@ -81,33 +82,45 @@ async def process_filter(callback: CallbackQuery, state: FSMContext):
     await state.update_data(filters=current_filters)
     
     # Переходим к вводу сообщения
+    await _show_message_input(callback, current_filters)
+
+async def _show_message_input(callback: CallbackQuery, filters: dict):
+    """Показ интерфейса ввода сообщения"""
     filter_text = "📢 **Настройка рассылки**\n\n"
     filter_text += "**Выбранные фильтры:**\n"
     
-    if 'gender' in current_filters:
-        gender_text = "Мужчины" if current_filters['gender'] == 'male' else "Женщины"
+    if 'gender' in filters:
+        gender_text = "Мужчины" if filters['gender'] == 'male' else "Женщины"
         filter_text += f"👤 Пол: {gender_text}\n"
     
-    if 'city' in current_filters:
-        filter_text += f"📍 Город: {current_filters['city']}\n"
+    if 'city' in filters:
+        filter_text += f"📍 Город: {filters['city']}\n"
         
-    if 'age_range' in current_filters:
-        min_age, max_age = current_filters['age_range']
+    if 'age_range' in filters:
+        min_age, max_age = filters['age_range']
         age_text = f"{min_age}-{max_age}" if max_age < 150 else f"{min_age}+"
         filter_text += f"🎂 Возраст: {age_text}\n"
     
-    if not current_filters:
+    if not filters:
         filter_text += "Всем пользователям\n"
     
     filter_text += "\n📝 Теперь введите текст сообщения для рассылки:"
     
     await callback.message.edit_text(filter_text, parse_mode="Markdown")
-    await state.set_state(ModeratorStates.broadcast_message)
 
 @router.message(ModeratorStates.broadcast_message)
 async def process_broadcast_message(message: Message, state: FSMContext):
     """Обработка текста сообщения для рассылки"""
     data = await state.get_data()
+    
+    # Проверяем, ожидается ли ввод города
+    if data.get('waiting_for') == 'city':
+        filters = data.get('filters', {})
+        filters['city'] = message.text.strip()
+        await state.update_data(filters=filters, waiting_for=None)
+        await _show_message_input(message, filters)
+        await state.set_state(ModeratorStates.broadcast_message)
+        return
     
     await state.update_data(message_text=message.text)
     
@@ -153,20 +166,28 @@ async def confirm_broadcast(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text("📤 Отправка рассылки... Пожалуйста, подождите.")
     
     # Отправляем рассылку
-    result = await broadcast_service.send_broadcast(
-        message_text=data['message_text'],
-        filters=data.get('filters', {})
-    )
+    try:
+        result = await broadcast_service.send_broadcast(
+            message_text=data['message_text'],
+            filters=data.get('filters', {})
+        )
+        
+        result_text = (
+            "✅ **Рассылка завершена!**\n\n"
+            f"📊 Статистика:\n"
+            f"• Отправлено: {result['sent']}\n"
+            f"• Ошибок: {result['errors']}\n"
+            f"• Всего пользователей: {result['total_users']}"
+        )
+        
+        await callback.message.edit_text(result_text, parse_mode="Markdown")
+        
+    except Exception as e:
+        await callback.message.edit_text(
+            f"❌ **Ошибка при отправке рассылки**\n\n"
+            f"Детали: {str(e)}"
+        )
     
-    result_text = (
-        "✅ **Рассылка завершена!**\n\n"
-        f"📊 Статистика:\n"
-        f"• Отправлено: {result['sent']}\n"
-        f"• Ошибок: {result['errors']}\n"
-        f"• Всего пользователей: {result['total_users']}"
-    )
-    
-    await callback.message.edit_text(result_text, parse_mode="Markdown")
     await state.clear()
 
 @router.callback_query(F.data == "cancel_broadcast")
@@ -174,3 +195,14 @@ async def cancel_broadcast(callback: CallbackQuery, state: FSMContext):
     """Отмена рассылки"""
     await callback.message.edit_text("❌ Рассылка отменена.")
     await state.clear()
+
+@router.callback_query(F.data == "back_to_filters")
+async def back_to_filters(callback: CallbackQuery, state: FSMContext):
+    """Возврат к выбору фильтров"""
+    await callback.message.edit_text(
+        "📢 **Создание рассылки**\n\n"
+        "Выберите фильтры для целевой аудитории:",
+        reply_markup=get_broadcast_filters_keyboard(),
+        parse_mode="Markdown"
+    )
+    await state.set_state(ModeratorStates.broadcast_filters)

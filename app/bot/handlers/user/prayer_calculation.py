@@ -35,7 +35,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
 async def calc_from_age(callback: CallbackQuery, state: FSMContext):
     """Расчет от возраста совершеннолетия"""
     await callback.message.edit_text(
-        "📅 Этот метод рассчитает намазы от 12 лет до даты, когда вы начали регулярно совершать намазы.\n\n"
+        "📅 Этот метод рассчитает намазы от совершеннолетия до даты, когда вы начали регулярно совершать намазы.\n\n"
         "Введите дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
         "Например: 01.01.2020"
     )
@@ -55,10 +55,13 @@ async def process_prayer_start_date(message: Message, state: FSMContext):
         await message.answer("❌ Для этого расчета нужна ваша дата рождения. Пройдите регистрацию сначала.")
         return
     
-    # Рассчитываем намазы
+    # Рассчитываем намазы с учетом пола и данных о хайде/нифасе
     prayers_data = calculation_service.calculate_prayers_from_age(
         birth_date=user.birth_date,
-        prayer_start_date=prayer_start_date
+        prayer_start_date=prayer_start_date,
+        gender=user.gender or 'male',
+        hayd_average_days=user.hayd_average_days,
+        childbirth_data=user.get_childbirth_info()
     )
     
     # Сохраняем результат
@@ -66,9 +69,10 @@ async def process_prayer_start_date(message: Message, state: FSMContext):
     
     # Показываем результат
     total_prayers = sum(prayers_data.values())
+    adult_age = config.ADULT_AGE_FEMALE if user.gender == 'female' else config.ADULT_AGE_MALE
     result_text = (
         f"✅ Расчет завершен!\n\n"
-        f"📊 Рассчитано намазов от {calculation_service.calculate_age(user.birth_date, user.birth_date.replace(year=user.birth_date.year + config.ADULT_AGE))} лет "
+        f"📊 Рассчитано намазов от {adult_age} лет "
         f"до {format_date(prayer_start_date)}:\n\n"
         f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
         "Детализация:\n"
@@ -124,8 +128,16 @@ async def process_end_date(message: Message, state: FSMContext):
         await message.answer("❌ Конечная дата должна быть больше начальной даты.")
         return
     
-    # Рассчитываем намазы
-    prayers_data = calculation_service.calculate_prayers_between_dates(start_date, end_date)
+    # Получаем данные пользователя для учета пола
+    user = await user_service.get_or_create_user(message.from_user.id)
+    
+    # Рассчитываем намазы с учетом пола
+    prayers_data = calculation_service.calculate_prayers_between_dates(
+        start_date, end_date,
+        gender=user.gender or 'male',
+        hayd_average_days=user.hayd_average_days,
+        childbirth_data=user.get_childbirth_info()
+    )
     
     # Сохраняем результат
     await prayer_service.set_user_prayers(message.from_user.id, prayers_data)
@@ -157,8 +169,6 @@ async def calc_manual(callback: CallbackQuery, state: FSMContext):
     """Ручной ввод количества намазов"""
     await state.update_data(manual_prayers={})
     
-    from ...keyboards.user.prayer_calc import get_prayer_type_selection_keyboard
-    
     await callback.message.edit_text(
         "✋ **Ручной ввод намазов**\n\n"
         "Выберите тип намаза, для которого хотите указать количество пропущенных.",
@@ -166,9 +176,6 @@ async def calc_manual(callback: CallbackQuery, state: FSMContext):
         parse_mode="Markdown"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_prayer_type_selection)
-
-# Продолжение следует...
-
 
 @router.callback_query(PrayerCalculationStates.waiting_for_prayer_type_selection, F.data.startswith("select_prayer_"))
 async def process_prayer_type_selection(callback: CallbackQuery, state: FSMContext):
@@ -178,7 +185,6 @@ async def process_prayer_type_selection(callback: CallbackQuery, state: FSMConte
     # Сохраняем выбранный тип намаза
     await state.update_data(current_prayer_type=prayer_type)
     
-    from ....core.config import config
     prayer_name = config.PRAYER_TYPES[prayer_type]
     
     await callback.message.edit_text(
@@ -207,9 +213,6 @@ async def process_manual_prayer_count(message: Message, state: FSMContext):
     # Сохраняем количество
     manual_prayers[prayer_type] = count
     await state.update_data(manual_prayers=manual_prayers)
-    
-    from ....core.config import config
-    from ...keyboards.user.prayer_calc import get_prayer_type_selection_keyboard
     
     prayer_name = config.PRAYER_TYPES[prayer_type]
     
@@ -307,8 +310,16 @@ async def process_prayer_start_from_adult(message: Message, state: FSMContext):
         await message.answer("❌ Дата начала намазов должна быть позже даты совершеннолетия.")
         return
     
+    # Получаем данные пользователя для учета пола
+    user = await user_service.get_or_create_user(message.from_user.id)
+    
     # Рассчитываем намазы
-    prayers_data = calculation_service.calculate_prayers_from_dates(adult_date, prayer_start_date)
+    prayers_data = calculation_service.calculate_prayers_from_dates(
+        adult_date, prayer_start_date,
+        gender=user.gender or 'male',
+        hayd_average_days=user.hayd_average_days,
+        childbirth_data=user.get_childbirth_info()
+    )
     
     # Сохраняем результат
     await prayer_service.set_user_prayers(message.from_user.id, prayers_data)

@@ -19,6 +19,13 @@ class BroadcastService:
         # Получаем пользователей по фильтрам
         users = await self._get_filtered_users(filters or {})
         
+        if not users:
+            return {
+                'sent': 0,
+                'errors': 0,
+                'total_users': 0
+            }
+        
         bot = Bot(token=config.BOT_TOKEN)
         sent_count = 0
         error_count = 0
@@ -51,6 +58,10 @@ class BroadcastService:
                     
                 except Exception as e:
                     error_count += 1
+                    # Логируем ошибки для отладки
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Ошибка отправки сообщения пользователю {user.telegram_id}: {e}")
                     continue
         
         finally:
@@ -68,24 +79,20 @@ class BroadcastService:
         # Базовая фильтрация
         gender = filters.get('gender')
         city = filters.get('city')
+        age_filter = filters.get('age_range')
+        
+        # Получаем пользователей с базовыми фильтрами
+        min_age = None
+        max_age = None
+        
+        if age_filter:
+            min_age, max_age = age_filter
         
         users = await self.user_repo.get_users_by_filters(
             gender=gender,
-            city=city
+            city=city,
+            min_age=min_age,
+            max_age=max_age
         )
-        
-        # Фильтрация по возрасту
-        age_filter = filters.get('age_range')
-        if age_filter and users:
-            min_age, max_age = age_filter
-            filtered_users = []
-            
-            for user in users:
-                if user.birth_date:
-                    age = self.calc_service.calculate_age(user.birth_date)
-                    if min_age <= age <= max_age:
-                        filtered_users.append(user)
-            
-            users = filtered_users
         
         return users

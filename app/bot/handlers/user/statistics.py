@@ -6,7 +6,7 @@ from datetime import datetime, date
 from ....core.services.prayer_service import PrayerService
 from ....core.services.user_service import UserService
 from ....core.services.calculation_service import CalculationService
-from ....core.config import config
+from ....core.config import config, escape_markdown
 from ...keyboards.user.statistics import get_statistics_keyboard
 
 router = Router()
@@ -33,7 +33,7 @@ async def show_user_statistics(message: Message):
     # Основная статистика
     stats_text = (
         "📊 **Подробная статистика восполнения намазов:**\n\n"
-        f"👤 Пользователь: {user.full_name or user.first_name}\n"
+        f"👤 Пользователь: {escape_markdown(user.display_name)}\n"
         f"📅 Возраст: {calc_service.calculate_age(user.birth_date) if user.birth_date else 'Не указан'} лет\n"
         f"🏙️ Город: {user.city or 'Не указан'}\n\n"
         f"📝 **Всего пропущено: {stats['total_missed']}**\n"

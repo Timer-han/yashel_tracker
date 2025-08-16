@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 class CalculationService:
     """Сервис для расчета количества намазов"""
     
-    def calculate_prayers_from_age(self, birth_date: date, gender: str = 'male',
-                                   prayer_start_date: date = None,
+    def calculate_prayers_from_age(self, birth_date: date, prayer_start_date: date,
+                                   gender: str = 'male',
                                    hayd_average_days: float = None,
                                    childbirth_data: List[Dict] = None) -> Dict[str, int]:
         """Расчет намазов от возраста совершеннолетия до начала совершения намазов"""
@@ -17,10 +17,6 @@ class CalculationService:
         
         # Дата совершеннолетия
         adult_date = birth_date.replace(year=birth_date.year + adult_age)
-        
-        # Если дата начала намазов не указана, используем сегодняшнюю дату
-        if prayer_start_date is None:
-            prayer_start_date = date.today()
         
         return self.calculate_prayers_between_dates(
             adult_date, prayer_start_date, gender, 
@@ -70,7 +66,7 @@ class CalculationService:
         
         # Расчет дней хайда
         if hayd_average_days and hayd_average_days > 0:
-            total_months = (end_date - start_date).days / 30
+            total_months = (end_date - start_date).days / 30.0
             hayd_total = int(total_months * min(hayd_average_days, config.HAYD_MAX_DAYS))
             excluded_days += hayd_total
         
@@ -87,13 +83,14 @@ class CalculationService:
                         if 'hayd_after' in birth:
                             # Период после родов до конца расчетного периода
                             days_after_birth = (end_date - birth_date).days
-                            months_after = days_after_birth / 30
+                            months_after = days_after_birth / 30.0
                             # Новый хайд после родов
                             new_hayd = int(months_after * min(birth['hayd_after'], config.HAYD_MAX_DAYS))
                             # Вычитаем старый хайд за этот период и добавляем новый
                             old_hayd = int(months_after * min(hayd_average_days or 0, config.HAYD_MAX_DAYS))
                             excluded_days = excluded_days - old_hayd + new_hayd
-                except:
+                except Exception as e:
+                    logger.warning(f"Ошибка обработки данных о родах: {e}")
                     continue
         
         return min(excluded_days, (end_date - start_date).days)

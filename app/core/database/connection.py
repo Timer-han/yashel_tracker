@@ -21,15 +21,12 @@ class DatabaseConnection:
         """Инициализация базы данных"""
         connection = await self.get_connection()
         try:
-            # Создание таблицы пользователей
+            # Создание таблицы пользователей (исправленная структура)
             await connection.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     telegram_id INTEGER UNIQUE NOT NULL,
                     username TEXT,
-                    first_name TEXT,
-                    last_name TEXT,
-                    full_name TEXT,
                     gender TEXT,
                     birth_date DATE,
                     city TEXT,
@@ -39,7 +36,12 @@ class DatabaseConnection:
                     adult_date DATE,
                     last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    fasting_missed_days INTEGER DEFAULT 0,
+                    fasting_completed_days INTEGER DEFAULT 0,
+                    hayd_average_days REAL DEFAULT NULL,
+                    childbirth_count INTEGER DEFAULT 0,
+                    childbirth_data TEXT DEFAULT NULL
                 )
             """)
             
@@ -53,7 +55,7 @@ class DatabaseConnection:
                     completed INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    FOREIGN KEY (user_id) REFERENCES users (telegram_id),
                     UNIQUE(user_id, prayer_type)
                 )
             """)
@@ -70,7 +72,7 @@ class DatabaseConnection:
                     new_value INTEGER NOT NULL,
                     comment TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
+                    FOREIGN KEY (user_id) REFERENCES users (telegram_id)
                 )
             """)
             
@@ -85,6 +87,20 @@ class DatabaseConnection:
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            
+            # Создание индексов
+            await connection.execute("""
+                CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)
+            """)
+            await connection.execute("""
+                CREATE INDEX IF NOT EXISTS idx_prayers_user_id ON prayers(user_id)
+            """)
+            await connection.execute("""
+                CREATE INDEX IF NOT EXISTS idx_prayer_history_user_id ON prayer_history(user_id)
+            """)
+            await connection.execute("""
+                CREATE INDEX IF NOT EXISTS idx_admins_telegram_id ON admins(telegram_id)
             """)
             
             await connection.commit()

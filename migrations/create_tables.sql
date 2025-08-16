@@ -1,11 +1,8 @@
--- Таблица пользователей
+-- Таблица пользователей (исправленная структура)
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     telegram_id INTEGER UNIQUE NOT NULL,
     username TEXT,
-    first_name TEXT,
-    last_name TEXT,
-    full_name TEXT,
     gender TEXT,
     birth_date DATE,
     city TEXT,
@@ -15,7 +12,12 @@ CREATE TABLE IF NOT EXISTS users (
     adult_date DATE,
     last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fasting_missed_days INTEGER DEFAULT 0,
+    fasting_completed_days INTEGER DEFAULT 0,
+    hayd_average_days REAL DEFAULT NULL,
+    childbirth_count INTEGER DEFAULT 0,
+    childbirth_data TEXT DEFAULT NULL
 );
 
 -- Таблица намазов
@@ -27,7 +29,7 @@ CREATE TABLE IF NOT EXISTS prayers (
     completed INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (user_id) REFERENCES users (telegram_id),
     UNIQUE(user_id, prayer_type)
 );
 
@@ -42,7 +44,7 @@ CREATE TABLE IF NOT EXISTS prayer_history (
     new_value INTEGER NOT NULL,
     comment TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (telegram_id)
 );
 
 -- Таблица администраторов

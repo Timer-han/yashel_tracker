@@ -89,7 +89,7 @@ async def process_fast_start_date(message: Message, state: FSMContext):
         birth_date=user.birth_date,
         adult_date=adult_date,
         fast_start_date=fast_start_date,
-        gender=user.gender,
+        gender=user.gender or 'male',
         hayd_average_days=user.hayd_average_days,
         childbirth_data=childbirth_data
     )
@@ -152,5 +152,43 @@ async def handle_fasting_actions(callback: CallbackQuery):
         else:
             await callback.answer("❌ Нет восполненных дней", show_alert=True)
     
-    # Обновляем меню
-    await show_fasting_menu(callback.message)
+    elif action == "stats":
+        # Показываем детальную статистику
+        stats_text = (
+            f"📊 **Детальная статистика постов:**\n\n"
+            f"📝 Всего пропущено: **{user.fasting_missed_days}**\n"
+            f"✅ Восполнено: **{user.fasting_completed_days}**\n"
+            f"⏳ Осталось: **{user.fasting_remaining_days}**\n\n"
+        )
+        
+        if user.fasting_missed_days > 0:
+            progress = (user.fasting_completed_days / user.fasting_missed_days) * 100
+            progress_bar = "▓" * int(progress / 10) + "░" * (10 - int(progress / 10))
+            stats_text += f"📈 Прогресс: [{progress_bar}] {progress:.1f}%\n\n"
+            
+            if progress >= 80:
+                stats_text += "🎯 Вы почти у цели! Не останавливайтесь!"
+            elif progress >= 50:
+                stats_text += "💪 Отличный прогресс! Продолжайте в том же духе!"
+            elif progress >= 25:
+                stats_text += "📈 Хорошее начало! Держите темп!"
+            else:
+                stats_text += "🌱 Каждый день поста приближает к цели!"
+                
+        stats_text += "\n\n🤲 Да примет Аллах ваши усилия!"
+        
+        await callback.message.answer(stats_text, parse_mode="Markdown")
+        return
+    
+    elif action == "reset":
+        # Сброс всех данных о постах
+        await user_repo.update_user(
+            telegram_id=callback.from_user.id,
+            fasting_missed_days=0,
+            fasting_completed_days=0
+        )
+        await callback.answer("🔄 Данные о постах сброшены")
+    
+    # Обновляем меню (кроме статистики)
+    if action != "stats":
+        await show_fasting_menu(callback.message)

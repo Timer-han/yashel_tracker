@@ -52,4 +52,8 @@ class UserService:
     
     async def update_last_activity(self, telegram_id: int) -> bool:
         """Обновление времени последней активности"""
-        return await self.user_repo.update_user(telegram_id=telegram_id)
+        from datetime import datetime
+        return await self.user_repo.update_user(
+            telegram_id=telegram_id,
+            last_activity=datetime.now()
+        )

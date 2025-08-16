@@ -96,89 +96,88 @@ class WomenCalculationService:
         
         return {'total': total_fast_days, 'hayd_days': 0, 'nifas_days': 0}
 
-
-def calculate_missed_fasts_detailed(self, birth_date: date, adult_date: date,
-                                    fast_start_date: date, gender: str,
-                                    hayd_average_days: float = None,
-                                    childbirth_data: List[Dict] = None) -> Dict[str, int]:
-    """Детальный расчет пропущенных постов"""
-    
-    if fast_start_date <= adult_date:
-        return {'total': 0, 'ramadan_count': 0, 'hayd_days': 0, 'nifas_days': 0}
-    
-    # Считаем количество Рамаданов между датами
-    start_year = adult_date.year
-    end_year = fast_start_date.year
-    
-    ramadan_count = 0
-    total_fast_days = 0
-    hayd_during_ramadan = 0
-    nifas_during_ramadan = 0
-    
-    # Примерные даты Рамадана (сдвигается на ~11 дней каждый год)
-    ramadan_dates = self._get_ramadan_dates(start_year, end_year)
-    
-    for ramadan_start, ramadan_end in ramadan_dates:
-        # Проверяем, попадает ли Рамадан в период пропуска
-        if ramadan_end >= adult_date and ramadan_start <= fast_start_date:
-            ramadan_count += 1
-            
-            # Корректируем даты Рамадана под наш период
-            actual_start = max(ramadan_start, adult_date)
-            actual_end = min(ramadan_end, fast_start_date)
-            
-            days_in_ramadan = (actual_end - actual_start).days + 1
-            total_fast_days += days_in_ramadan
-            
-            # Для женщин считаем хайд и нифас в этот Рамадан
-            if gender == 'female':
-                # Хайд (примерно 1 раз в месяц)
-                if hayd_average_days:
-                    hayd_during_ramadan += min(hayd_average_days, days_in_ramadan)
+    def calculate_missed_fasts_detailed(self, birth_date: date, adult_date: date,
+                                        fast_start_date: date, gender: str,
+                                        hayd_average_days: float = None,
+                                        childbirth_data: List[Dict] = None) -> Dict[str, int]:
+        """Детальный расчет пропущенных постов"""
+        
+        if fast_start_date <= adult_date:
+            return {'total': 0, 'ramadan_count': 0, 'hayd_days': 0, 'nifas_days': 0}
+        
+        # Считаем количество Рамаданов между датами
+        start_year = adult_date.year
+        end_year = fast_start_date.year
+        
+        ramadan_count = 0
+        total_fast_days = 0
+        hayd_during_ramadan = 0
+        nifas_during_ramadan = 0
+        
+        # Примерные даты Рамадана (сдвигается на ~11 дней каждый год)
+        ramadan_dates = self._get_ramadan_dates(start_year, end_year)
+        
+        for ramadan_start, ramadan_end in ramadan_dates:
+            # Проверяем, попадает ли Рамадан в период пропуска
+            if ramadan_end >= adult_date and ramadan_start <= fast_start_date:
+                ramadan_count += 1
                 
-                # Нифас
-                if childbirth_data:
-                    for birth in childbirth_data:
-                        birth_date_obj = date.fromisoformat(birth['date'])
-                        nifas_end = birth_date_obj + timedelta(days=birth.get('nifas_days', 0))
-                        
-                        # Проверяем пересечение нифаса с Рамаданом
-                        if birth_date_obj <= ramadan_end and nifas_end >= ramadan_start:
-                            nifas_start = max(birth_date_obj, ramadan_start)
-                            nifas_finish = min(nifas_end, ramadan_end)
-                            nifas_days_in_ramadan = (nifas_finish - nifas_start).days + 1
-                            nifas_during_ramadan += max(0, nifas_days_in_ramadan)
-    
-    return {
-        'total': total_fast_days,
-        'ramadan_count': ramadan_count,
-        'hayd_days': int(hayd_during_ramadan),
-        'nifas_days': int(nifas_during_ramadan)
-    }
+                # Корректируем даты Рамадана под наш период
+                actual_start = max(ramadan_start, adult_date)
+                actual_end = min(ramadan_end, fast_start_date)
+                
+                days_in_ramadan = (actual_end - actual_start).days + 1
+                total_fast_days += days_in_ramadan
+                
+                # Для женщин считаем хайд и нифас в этот Рамадан
+                if gender == 'female':
+                    # Хайд (примерно 1 раз в месяц)
+                    if hayd_average_days:
+                        hayd_during_ramadan += min(hayd_average_days, days_in_ramadan)
+                    
+                    # Нифас
+                    if childbirth_data:
+                        for birth in childbirth_data:
+                            birth_date_obj = date.fromisoformat(birth['date'])
+                            nifas_end = birth_date_obj + timedelta(days=birth.get('nifas_days', 0))
+                            
+                            # Проверяем пересечение нифаса с Рамаданом
+                            if birth_date_obj <= ramadan_end and nifas_end >= ramadan_start:
+                                nifas_start = max(birth_date_obj, ramadan_start)
+                                nifas_finish = min(nifas_end, ramadan_end)
+                                nifas_days_in_ramadan = (nifas_finish - nifas_start).days + 1
+                                nifas_during_ramadan += max(0, nifas_days_in_ramadan)
+        
+        return {
+            'total': total_fast_days,
+            'ramadan_count': ramadan_count,
+            'hayd_days': int(hayd_during_ramadan),
+            'nifas_days': int(nifas_during_ramadan)
+        }
 
-def _get_ramadan_dates(self, start_year: int, end_year: int) -> List[Tuple[date, date]]:
-    """Получение примерных дат Рамадана для диапазона лет"""
-    # Это упрощенный расчет. В реальности нужно использовать исламский календарь
-    # Здесь используем примерные даты
-    ramadan_dates = []
-    
-    # Базовая дата Рамадана 2024: примерно 11 марта - 9 апреля
-    base_date = date(2024, 3, 11)
-    
-    for year in range(start_year, end_year + 1):
-        # Сдвиг на ~11 дней назад каждый год
-        year_diff = year - 2024
-        shift_days = year_diff * 11
+    def _get_ramadan_dates(self, start_year: int, end_year: int) -> List[Tuple[date, date]]:
+        """Получение примерных дат Рамадана для диапазона лет"""
+        # Это упрощенный расчет. В реальности нужно использовать исламский календарь
+        # Здесь используем примерные даты
+        ramadan_dates = []
         
-        ramadan_start = base_date - timedelta(days=shift_days)
-        # Корректируем если вышли за границы года
-        if ramadan_start.month == 12 and ramadan_start.day > 20:
-            ramadan_start = ramadan_start.replace(year=year-1)
-        else:
-            ramadan_start = ramadan_start.replace(year=year)
+        # Базовая дата Рамадана 2024: примерно 11 марта - 9 апреля
+        base_date = date(2024, 3, 11)
+        
+        for year in range(start_year, end_year + 1):
+            # Сдвиг на ~11 дней назад каждый год
+            year_diff = year - 2024
+            shift_days = year_diff * 11
             
-        ramadan_end = ramadan_start + timedelta(days=29)  # Рамадан 29-30 дней
+            ramadan_start = base_date - timedelta(days=shift_days)
+            # Корректируем если вышли за границы года
+            if ramadan_start.month == 12 and ramadan_start.day > 20:
+                ramadan_start = ramadan_start.replace(year=year-1)
+            else:
+                ramadan_start = ramadan_start.replace(year=year)
+                
+            ramadan_end = ramadan_start + timedelta(days=29)  # Рамадан 29-30 дней
+            
+            ramadan_dates.append((ramadan_start, ramadan_end))
         
-        ramadan_dates.append((ramadan_start, ramadan_end))
-    
-    return ramadan_dates
+        return ramadan_dates

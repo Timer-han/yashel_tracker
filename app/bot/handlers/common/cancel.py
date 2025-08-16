@@ -23,9 +23,7 @@ async def cmd_cancel(message: Message, state: FSMContext):
     # Получаем пользователя для определения клавиатуры
     user = await user_service.get_or_create_user(
         telegram_id=message.from_user.id,
-        username=message.from_user.username,
-        first_name=message.from_user.first_name,
-        last_name=message.from_user.last_name
+        username=message.from_user.username
     )
     
     # Выбираем клавиатуру в зависимости от роли

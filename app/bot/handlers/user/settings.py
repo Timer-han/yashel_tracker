@@ -5,6 +5,7 @@ from datetime import datetime
 
 from ...keyboards.user.settings import get_settings_menu_keyboard, get_change_confirmation_keyboard
 from ...keyboards.user.registration import get_gender_keyboard, get_gender_inline_keyboard
+from ....core.config import escape_markdown
 from ....core.services.user_service import UserService
 from ....core.services.prayer_service import PrayerService
 from ...states.settings import SettingsStates
@@ -20,7 +21,7 @@ async def show_settings(message: Message):
     
     settings_text = (
         "⚙️ **Настройки профиля**\n\n"
-        # f"👤 Имя: {user.username or 'Не указано'}\n"
+        f"👤 Имя: {escape_markdown(user.display_name)}\n"
         f"👤 Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"📅 Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
         f"🏙️ Город: {user.city or 'Не указан'}\n\n"
@@ -41,6 +42,24 @@ async def change_gender(callback: CallbackQuery, state: FSMContext):
         reply_markup=get_gender_inline_keyboard()
     )
     await state.set_state(SettingsStates.waiting_for_gender)
+
+@router.callback_query(F.data.startswith("set_gender_"))
+async def process_gender_change(callback: CallbackQuery, state: FSMContext):
+    """Обработка изменения пола"""
+    gender = callback.data.split("_")[2]  # male или female
+    
+    success = await user_service.user_repo.update_user(
+        telegram_id=callback.from_user.id,
+        gender=gender
+    )
+    
+    if success:
+        gender_text = "мужской" if gender == "male" else "женский"
+        await callback.message.edit_text(f"✅ Пол изменен на {gender_text}!")
+    else:
+        await callback.message.edit_text("❌ Ошибка при изменении пола.")
+    
+    await state.clear()
 
 @router.callback_query(F.data == "change_birth_date")
 async def change_birth_date(callback: CallbackQuery, state: FSMContext):
@@ -108,7 +127,7 @@ async def export_data(callback: CallbackQuery):
     export_text = (
         f"📊 **Экспорт данных пользователя**\n\n"
         f"**Профиль:**\n"
-        f"• Имя: {user.full_name or 'Не указано'}\n"
+        f"• Имя: {user.display_name}\n"
         f"• Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"• Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
         f"• Город: {user.city or 'Не указан'}\n"
@@ -151,10 +170,16 @@ async def reset_all_data_confirmed(callback: CallbackQuery):
     await user_service.user_repo.update_user(
         telegram_id=callback.from_user.id,
         is_registered=False,
-        full_name=None,
         gender=None,
         birth_date=None,
-        city=None
+        city=None,
+        prayer_start_date=None,
+        adult_date=None,
+        fasting_missed_days=0,
+        fasting_completed_days=0,
+        hayd_average_days=None,
+        childbirth_count=0,
+        childbirth_data=None
     )
     
     await callback.message.edit_text(
