@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime
 
 from ...keyboards.user.settings import get_settings_menu_keyboard, get_change_confirmation_keyboard
-from ...keyboards.user.registration import get_gender_keyboard
+from ...keyboards.user.registration import get_gender_keyboard, get_gender_inline_keyboard
 from ....core.services.user_service import UserService
 from ....core.services.prayer_service import PrayerService
 from ...states.settings import SettingsStates
@@ -20,7 +20,7 @@ async def show_settings(message: Message):
     
     settings_text = (
         "⚙️ **Настройки профиля**\n\n"
-        f"👤 Имя: {user.full_name or 'Не указано'}\n"
+        # f"👤 Имя: {user.username or 'Не указано'}\n"
         f"👤 Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"📅 Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
         f"🏙️ Город: {user.city or 'Не указан'}\n\n"
@@ -33,35 +33,12 @@ async def show_settings(message: Message):
         parse_mode="Markdown"
     )
 
-@router.callback_query(F.data == "change_name")
-async def change_name(callback: CallbackQuery, state: FSMContext):
-    """Изменение имени"""
-    await callback.message.edit_text("👤 Введите новое имя:")
-    await state.set_state(SettingsStates.waiting_for_name)
-
-@router.message(SettingsStates.waiting_for_name)
-async def process_new_name(message: Message, state: FSMContext):
-    """Обработка нового имени"""
-    new_name = message.text.strip()
-    
-    success = await user_service.user_repo.update_user(
-        telegram_id=message.from_user.id,
-        full_name=new_name
-    )
-    
-    if success:
-        await message.answer("✅ Имя успешно изменено!")
-    else:
-        await message.answer("❌ Ошибка при изменении имени.")
-    
-    await state.clear()
-
 @router.callback_query(F.data == "change_gender")
 async def change_gender(callback: CallbackQuery, state: FSMContext):
     """Изменение пола"""
     await callback.message.edit_text(
         "👤 Выберите ваш пол:",
-        reply_markup=get_gender_keyboard()
+        reply_markup=get_gender_inline_keyboard()
     )
     await state.set_state(SettingsStates.waiting_for_gender)
 

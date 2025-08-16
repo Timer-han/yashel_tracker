@@ -23,6 +23,15 @@ class Config:
     
     # Возрast совершеннолетия в исламе
     ADULT_AGE: int = 12
+
+    # Возраст совершеннолетия в исламе (зависит от пола)
+    ADULT_AGE_MALE: int = 12
+    ADULT_AGE_FEMALE: int = 9
+
+    # Хайд и нифас (для женщин)
+    HAYD_MIN_DAYS: int = 3
+    HAYD_MAX_DAYS: int = 10
+    NIFAS_MAX_DAYS: int = 40
     
     # Время для ежедневных напоминаний (час в формате 24ч)
     DAILY_REMINDER_HOUR: int = 20  # 20:00

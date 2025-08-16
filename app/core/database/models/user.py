@@ -1,6 +1,7 @@
 from datetime import datetime, date
-from typing import Optional
+from typing import Optional, Dict, List
 from .base import BaseModel
+import json
 
 class User(BaseModel):
     """Модель пользователя"""
@@ -9,23 +10,22 @@ class User(BaseModel):
         self,
         telegram_id: int,
         username: Optional[str] = None,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        full_name: Optional[str] = None,
         gender: Optional[str] = None,
         birth_date: Optional[date] = None,
         city: Optional[str] = None,
         role: str = "user",
         is_registered: bool = False,
         prayer_start_date: Optional[date] = None,
-        adult_date: Optional[date] = None
+        adult_date: Optional[date] = None,
+        fasting_missed_days: int = 0,
+        fasting_completed_days: int = 0,
+        hayd_average_days: Optional[float] = None,
+        childbirth_count: int = 0,
+        childbirth_data: Optional[str] = None
     ):
         super().__init__()
         self.telegram_id = telegram_id
         self.username = username
-        self.first_name = first_name
-        self.last_name = last_name
-        self.full_name = full_name or f"{first_name or ''} {last_name or ''}".strip()
         self.gender = gender
         self.birth_date = birth_date
         self.city = city
@@ -34,3 +34,30 @@ class User(BaseModel):
         self.prayer_start_date = prayer_start_date
         self.adult_date = adult_date
         self.last_activity = datetime.now()
+        
+        # Поля для постов
+        self.fasting_missed_days = fasting_missed_days
+        self.fasting_completed_days = fasting_completed_days
+        
+        # Поля для женщин (хайд/нифас)
+        self.hayd_average_days = hayd_average_days
+        self.childbirth_count = childbirth_count
+        self.childbirth_data = childbirth_data  # JSON строка с данными о родах
+    
+    @property
+    def fasting_remaining_days(self) -> int:
+        """Оставшиеся дни постов"""
+        return max(0, self.fasting_missed_days - self.fasting_completed_days)
+    
+    def get_childbirth_info(self) -> List[Dict]:
+        """Получение информации о родах из JSON"""
+        if not self.childbirth_data:
+            return []
+        try:
+            return json.loads(self.childbirth_data)
+        except:
+            return []
+    
+    def set_childbirth_info(self, info: List[Dict]):
+        """Сохранение информации о родах в JSON"""
+        self.childbirth_data = json.dumps(info)

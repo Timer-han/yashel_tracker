@@ -1,7 +1,7 @@
 from aiogram import Dispatcher
 
 from .common import start, help, cancel
-from .user import registration, statistics, prayer_calculation, prayer_tracking
+from .user import registration, statistics, prayer_calculation, prayer_tracking, fasting
 from .moderator import broadcast, user_statistics
 from .admin import admin_management
 from .user.settings import router as settings_router
@@ -19,7 +19,8 @@ def register_all_handlers(dp: Dispatcher):
     dp.include_router(statistics.router)
     dp.include_router(prayer_calculation.router)
     dp.include_router(prayer_tracking.router)
-    
+    dp.include_router(fasting.router)
+
     # Обработчики модераторов
     dp.include_router(broadcast.router)
     dp.include_router(user_statistics.router)
