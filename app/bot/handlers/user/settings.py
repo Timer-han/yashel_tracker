@@ -26,7 +26,7 @@ async def show_settings(message: Message):
     user = await user_service.get_or_create_user(message.from_user.id)
     
     settings_text = (
-        "⚙️ **Настройки профиля**\n\n"
+        "⚙️ *Настройки профиля*\n\n"
         f"👤 Имя: {escape_markdown(user.display_name)}\n"
         f"👤 Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"📅 Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
@@ -129,7 +129,7 @@ async def process_new_city(message: Message, state: FSMContext):
 async def disable_notifications(callback: CallbackQuery):
     """Отключение ежедневных уведомлений"""
     await callback.message.edit_text(
-        "🔕 **Отключение ежедневных уведомлений**\n\n"
+        "🔕 *Отключение ежедневных уведомлений*\n\n"
         "Ты уверен, что хочешь отключить ежедневные напоминания о восполнении намазов?\n\n"
         "⚠️ Обрати внимание: административные рассылки ты будешь получать по-прежнему.",
         reply_markup=get_notifications_confirmation_keyboard(),
@@ -141,7 +141,7 @@ async def disable_notifications(callback: CallbackQuery):
 async def enable_notifications(callback: CallbackQuery):
     """Включение ежедневных уведомлений"""
     await callback.message.edit_text(
-        "🔔 **Включение ежедневных уведомлений**\n\n"
+        "🔔 *Включение ежедневных уведомлений*\n\n"
         "Хочешь включить ежедневные напоминания о восполнении намазов?\n\n"
         "📱 Уведомления будут приходить каждый день в 20:00.",
         reply_markup=get_notifications_confirmation_keyboard(),
@@ -165,13 +165,13 @@ async def confirm_notifications_change(callback: CallbackQuery):
     if success:
         if new_state == 1:
             text = (
-                "✅ **Ежедневные уведомления включены!**\n\n"
+                "✅ *Ежедневные уведомления включены!*\n\n"
                 "🔔 Ты будешь получать напоминания о восполнении долгов каждый день в 20:00.\n\n"
                 "🤲 Пусть Аллах облегчит тебе восполнение намазов и постов!"
             )
         else:
             text = (
-                "✅ **Ежедневные уведомления отключены!**\n\n"
+                "✅ *Ежедневные уведомления отключены!*\n\n"
                 "🔕 Ты больше не будешь получать автоматические напоминания.\n\n"
                 "💡 Обратно сможешь включить их в любое время через настройки."
             )
@@ -186,7 +186,7 @@ async def cancel_notifications_change(callback: CallbackQuery):
     user = await user_service.get_or_create_user(callback.from_user.id)
     
     settings_text = (
-        "⚙️ **Настройки профиля**\n\n"
+        "⚙️ *Настройки профиля*\n\n"
         f"👤 Имя: {escape_markdown(user.display_name)}\n"
         f"👤 Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"📅 Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
@@ -208,8 +208,8 @@ async def export_data(callback: CallbackQuery):
     stats = await prayer_service.get_user_statistics(callback.from_user.id)
     
     export_text = (
-        f"📊 **Экспорт данных пользователя**\n\n"
-        f"**👤 Профиль:**\n"
+        f"📊 *Экспорт данных пользователя*\n\n"
+        f"*👤 Профиль:*\n"
         f"• Telegram ID: `{user.telegram_id}`\n"
         f"• Имя: {escape_markdown(user.display_name)}\n"
         f"• Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
@@ -222,7 +222,7 @@ async def export_data(callback: CallbackQuery):
     
     # Статистика намазов
     export_text += (
-        f"**🕌 Статистика намазов:**\n"
+        f"*🕌 Статистика намазов:*\n"
         f"• Всего пропущено: {stats['total_missed']}\n"
         f"• Восполнено: {stats['total_completed']}\n"
         f"• Осталось: {stats['total_remaining']}\n"
@@ -232,7 +232,7 @@ async def export_data(callback: CallbackQuery):
         progress = (stats['total_completed'] / stats['total_missed']) * 100
         export_text += f"• Прогресс восполнения: {progress:.1f}%\n"
     
-    export_text += "\n**📋 Детали по намазам:**\n"
+    export_text += "\n*📋 Детали по намазам:*\n"
     for prayer_name, data in stats['prayers'].items():
         if data['total'] > 0:
             prayer_progress = (data['completed'] / data['total']) * 100 if data['total'] > 0 else 0
@@ -244,7 +244,7 @@ async def export_data(callback: CallbackQuery):
     remaining_fasts = max(0, missed_fasts - completed_fasts)
     
     export_text += (
-        f"\n**📿 Статистика постов:**\n"
+        f"\n*📿 Статистика постов:*\n"
         f"• Всего пропущено дней: {missed_fasts}\n"
         f"• Восполнено дней: {completed_fasts}\n"
         f"• Осталось дней: {remaining_fasts}\n"
@@ -257,7 +257,7 @@ async def export_data(callback: CallbackQuery):
     # Специальная информация для женщин
     if False:
         if user.gender == 'female':
-            export_text += f"\n**👩 Информация для женщин:**\n"
+            export_text += f"\n*👩 Информация для женщин:*\n"
             
             if user.hayd_average_days:
                 export_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
@@ -270,7 +270,7 @@ async def export_data(callback: CallbackQuery):
             if user.childbirth_count and user.childbirth_count > 0:
                 childbirth_info = user.get_childbirth_info()
                 if childbirth_info:
-                    export_text += f"\n**👶 Детали родов:**\n"
+                    export_text += f"\n*👶 Детали родов:*\n"
                     for i, birth in enumerate(childbirth_info, 1):
                         birth_date = birth.get('date', 'неизвестно')
                         nifas_days = birth.get('nifas_days', 0)
@@ -294,7 +294,7 @@ async def export_data(callback: CallbackQuery):
                 approximate_cycles = reproductive_years * 12  # примерно 12 циклов в год
                 
                 export_text += (
-                    f"\n**📊 Дополнительные расчеты:**\n"
+                    f"\n*📊 Дополнительные расчеты:*\n"
                     f"• Возраст: {age} лет\n"
                     f"• Репродуктивный период: ~{reproductive_years} лет\n"
                     f"• Примерное количество циклов: ~{approximate_cycles}\n"
@@ -302,7 +302,7 @@ async def export_data(callback: CallbackQuery):
 
     # Системная информация
     export_text += (
-        f"\n**⚙️ Системная информация:**\n"
+        f"\n*⚙️ Системная информация:*\n"
         f"• Дата совершеннолетия: {user.adult_date.strftime('%d.%m.%Y') if user.adult_date else 'Не установлена'}\n"
         f"• Дата начала намазов: {user.prayer_start_date.strftime('%d.%m.%Y') if user.prayer_start_date else 'Не установлена'}\n"
         f"• Последняя активность: {user.last_activity.strftime('%d.%m.%Y %H:%M') if hasattr(user, 'last_activity') and user.last_activity else 'Неизвестно'}\n"
@@ -311,7 +311,7 @@ async def export_data(callback: CallbackQuery):
     
     # Информация об экспорте
     export_text += (
-        f"\n**📤 Информация об экспорте:**\n"
+        f"\n*📤 Информация об экспорте:*\n"
         f"• Дата экспорта: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n"
         f"• Версия системы: Яшел Трекер v{__version__}\n"
         f"• Формат данных: Полный экспорт\n"
@@ -325,12 +325,12 @@ async def export_data(callback: CallbackQuery):
 async def confirm_reset_all_data(callback: CallbackQuery):
     """Подтверждение полного сброса"""
     await callback.message.edit_text(
-        "🔄 **Полный сброс данных**\n\n"
-        "⚠️ **ВНИМАНИЕ!** Это действие:\n"
+        "🔄 *Полный сброс данных*\n\n"
+        "⚠️ *ВНИМАНИЕ!* Это действие:\n"
         "• Удалит всю статистику намазов\n"
         "• Сбросит настройки профиля\n"
         "• Потребует повторной регистрации\n\n"
-        "Это действие **НЕОБРАТИМО**!\n\n"
+        "Это действие *НЕОБРАТИМО*!\n\n"
         "Ты действительно хочешь продолжить?",
         reply_markup=get_change_confirmation_keyboard("reset_all"),
         parse_mode="Markdown"

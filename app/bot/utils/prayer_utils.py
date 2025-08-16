@@ -12,22 +12,22 @@ def format_prayer_statistics(prayers: List[Prayer]) -> str:
     total_remaining = sum(p.remaining for p in prayers)
     
     stats_text = (
-        f"📝 Всего пропущено: **{total_missed}**\n"
-        f"✅ Восполнено: **{total_completed}**\n"
-        f"⏳ Осталось: **{total_remaining}**\n\n"
+        f"📝 Всего пропущено: *{total_missed}*\n"
+        f"✅ Восполнено: *{total_completed}*\n"
+        f"⏳ Осталось: *{total_remaining}*\n\n"
     )
     
     if total_completed > 0 and total_missed > 0:
         progress = (total_completed / total_missed) * 100
-        stats_text += f"📈 Прогресс: **{progress:.1f}%**\n\n"
+        stats_text += f"📈 Прогресс: *{progress:.1f}%*\n\n"
     
-    stats_text += "**Детализация по намазам:**\n"
+    stats_text += "*Детализация по намазам:*\n"
     
     for prayer in prayers:
         if prayer.total_missed > 0:
             prayer_name = config.PRAYER_TYPES.get(prayer.prayer_type, prayer.prayer_type)
             stats_text += (
-                f"\n🕌 **{prayer_name}:**\n"
+                f"\n🕌 *{prayer_name}:*\n"
                 f"   Пропущено: {prayer.total_missed}\n"
                 f"   Восполнено: {prayer.completed}\n"
                 f"   Осталось: {prayer.remaining}\n"

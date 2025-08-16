@@ -27,7 +27,7 @@ async def show_admin_management(message: Message, state: FSMContext):
     await state.clear()
     
     await message.answer(
-        "👥 **Управление администраторами**\n\n"
+        "👥 *Управление администраторами*\n\n"
         "Выберите действие:",
         reply_markup=get_admin_management_keyboard(),
         parse_mode="Markdown"
@@ -39,7 +39,7 @@ async def add_moderator_start(callback: CallbackQuery, state: FSMContext):
     await state.update_data(role="moderator")
     
     await callback.message.edit_text(
-        "➕ **Добавление модератора**\n\n"
+        "➕ *Добавление модератора*\n\n"
         "Отправьте Telegram ID пользователя, которого хотите назначить модератором:"
     )
     await state.set_state(AdminStates.add_admin_id)
@@ -50,8 +50,8 @@ async def add_admin_start(callback: CallbackQuery, state: FSMContext):
     await state.update_data(role="admin")
     
     await callback.message.edit_text(
-        "➕ **Добавление администратора**\n\n"
-        "⚠️ **ВНИМАНИЕ**: Администратор получит полные права в системе!\n\n"
+        "➕ *Добавление администратора*\n\n"
+        "⚠️ *ВНИМАНИЕ*: Администратор получит полные права в системе!\n\n"
         "Отправьте Telegram ID пользователя, которого хотите назначить администратором:"
     )
     await state.set_state(AdminStates.add_admin_id)
@@ -77,9 +77,9 @@ async def process_admin_id(message: Message, state: FSMContext):
         role_text = "модератором" if role == "moderator" else "администратором"
         
         await message.answer(
-            f"👤 **Подтверждение назначения**\n\n"
+            f"👤 *Подтверждение назначения*\n\n"
             f"Пользователь ID: `{user_id}`\n"
-            f"Роль: **{role_text.capitalize()}**\n\n"
+            f"Роль: *{role_text.capitalize()}*\n\n"
             f"❓ Назначить этого пользователя {role_text}?",
             reply_markup=get_admin_confirmation_keyboard(),
             parse_mode="Markdown"
@@ -127,20 +127,20 @@ async def list_admins(callback: CallbackQuery):
         await callback.message.edit_text("📋 Список администраторов пуст.")
         return
     
-    admins_text = "📋 **Список администраторов:**\n\n"
+    admins_text = "📋 *Список администраторов:*\n\n"
     
     # Группируем по ролям
     admin_list = [a for a in admins if a.role == "admin"]
     moderator_list = [a for a in admins if a.role == "moderator"]
     
     if admin_list:
-        admins_text += "👑 **Администраторы:**\n"
+        admins_text += "👑 *Администраторы:*\n"
         for admin in admin_list:
             admins_text += f"• ID: `{admin.telegram_id}`\n"
         admins_text += "\n"
     
     if moderator_list:
-        admins_text += "👮 **Модераторы:**\n"
+        admins_text += "👮 *Модераторы:*\n"
         for moderator in moderator_list:
             admins_text += f"• ID: `{moderator.telegram_id}`\n"
     
@@ -150,7 +150,7 @@ async def list_admins(callback: CallbackQuery):
 async def remove_admin_start(callback: CallbackQuery, state: FSMContext):
     """Начало удаления админа"""
     await callback.message.edit_text(
-        "➖ **Удаление администратора/модератора**\n\n"
+        "➖ *Удаление администратора/модератора*\n\n"
         "Отправьте Telegram ID пользователя, которого хотите лишить прав:"
     )
     await state.set_state(AdminStates.remove_admin_id)
@@ -178,9 +178,9 @@ async def process_remove_admin_id(message: Message, state: FSMContext):
         role_text = "администратора" if admin.role == "admin" else "модератора"
         
         await message.answer(
-            f"⚠️ **Подтверждение удаления**\n\n"
+            f"⚠️ *Подтверждение удаления*\n\n"
             f"Пользователь ID: `{user_id}`\n"
-            f"Текущая роль: **{role_text.capitalize()}**\n\n"
+            f"Текущая роль: *{role_text.capitalize()}*\n\n"
             f"❓ Лишить этого пользователя прав {role_text}?",
             reply_markup=get_admin_confirmation_keyboard(),
             parse_mode="Markdown"
@@ -223,7 +223,7 @@ async def cancel_admin_action(callback: CallbackQuery, state: FSMContext):
 async def back_to_admin_menu(callback: CallbackQuery):
     """Возврат в меню управления админами"""
     await callback.message.edit_text(
-        "👥 **Управление администраторами**\n\n"
+        "👥 *Управление администраторами*\n\n"
         "Выберите действие:",
         reply_markup=get_admin_management_keyboard(),
         parse_mode="Markdown"

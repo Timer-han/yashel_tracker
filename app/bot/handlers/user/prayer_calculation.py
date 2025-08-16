@@ -80,7 +80,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
 #         f"✅ Расчет завершен!\n\n"
 #         f"📊 Рассчитано намазов от {adult_age} лет "
 #         f"до {format_date(prayer_start_date)}:\n\n"
-#         f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+#         f"📝 *Всего пропущенных намазов: {total_prayers}*\n\n"
 #         "Детализация:\n"
 #     )
     
@@ -156,7 +156,7 @@ async def process_end_date(message: Message, state: FSMContext):
         f"✅ Расчет завершен!\n\n"
         f"📊 Период: с {format_date(start_date)} по {format_date(end_date)}\n"
         f"📅 Количество дней: {days_count}\n\n"
-        f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+        f"📝 *Всего пропущенных намазов: {total_prayers}*\n\n"
         "Детализация:\n"
     )
     
@@ -176,7 +176,7 @@ async def calc_manual(callback: CallbackQuery, state: FSMContext):
     await state.update_data(manual_prayers={})
     
     await callback.message.edit_text(
-        "✋ **Ручной ввод намазов**\n\n"
+        "✋ *Ручной ввод намазов*\n\n"
         "Выбери тип намаза, для которого хочешь указать количество:",
         reply_markup=get_prayer_type_selection_keyboard(),
         parse_mode="Markdown"
@@ -194,7 +194,7 @@ async def process_prayer_type_selection(callback: CallbackQuery, state: FSMConte
     prayer_name = config.PRAYER_TYPES[prayer_type]
     
     await callback.message.edit_text(
-        f"🕌 **{prayer_name}**\n\n"
+        f"🕌 *{prayer_name}*\n\n"
         f"Введи количество пропущенных намазов '{prayer_name}':\n\n"
         "Например: 50"
     )
@@ -223,7 +223,7 @@ async def process_manual_prayer_count(message: Message, state: FSMContext):
     prayer_name = config.PRAYER_TYPES[prayer_type]
     
     # Показываем результат и возвращаем к выбору
-    current_text = "✋ **Ручной ввод намазов**\n\n"
+    current_text = "✋ *Ручной ввод намазов*\n\n"
     current_text += "✅ Сохранено:\n"
     
     for p_type, p_count in manual_prayers.items():
@@ -257,7 +257,7 @@ async def finish_manual_input(callback: CallbackQuery, state: FSMContext):
     # Показываем результат
     result_text = (
         f"✅ Ручной ввод завершен!\n\n"
-        f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+        f"📝 *Всего пропущенных намазов: {total_prayers}*\n\n"
         "Детализация:\n"
     )
     
@@ -338,7 +338,7 @@ async def process_prayer_start_from_adult(message: Message, state: FSMContext):
         f"✅ Расчет завершен!\n\n"
         f"📊 Период: с {format_date(adult_date)} по {format_date(prayer_start_date)}\n"
         f"📅 Количество дней: {days_count}\n\n"
-        f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+        f"📝 *Всего пропущенных намазов: {total_prayers}*\n\n"
         "Детализация:\n"
     )
     

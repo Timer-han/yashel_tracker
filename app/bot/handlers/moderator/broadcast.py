@@ -24,7 +24,7 @@ async def start_broadcast(message: Message, state: FSMContext):
     await state.clear()
     
     await message.answer(
-        "📢 **Создание рассылки**\n\n"
+        "📢 *Создание рассылки*\n\n"
         "Выберите фильтры для целевой аудитории:",
         reply_markup=get_broadcast_filters_keyboard(),
         parse_mode="Markdown"
@@ -87,8 +87,8 @@ async def process_filter(callback: CallbackQuery, state: FSMContext):
     await state.set_state(ModeratorStates.broadcast_message)
 
 def _get_filter_text(filters: dict):
-    filter_text = "📢 **Настройка рассылки**\n\n"
-    filter_text += "**Выбранные фильтры:**\n"
+    filter_text = "📢 *Настройка рассылки*\n\n"
+    filter_text += "*Выбранные фильтры:*\n"
     
     if 'gender' in filters:
         gender_text = "Мужчины" if filters['gender'] == 'male' else "Женщины"
@@ -111,8 +111,8 @@ def _get_filter_text(filters: dict):
 
 async def _show_message_input(callback: CallbackQuery, filters: dict):
     """Показ интерфейса ввода сообщения"""
-    filter_text = "📢 **Настройка рассылки**\n\n"
-    filter_text += "**Выбранные фильтры:**\n"
+    filter_text = "📢 *Настройка рассылки*\n\n"
+    filter_text += "*Выбранные фильтры:*\n"
     
     if 'gender' in filters:
         gender_text = "Мужчины" if filters['gender'] == 'male' else "Женщины"
@@ -155,10 +155,10 @@ async def process_broadcast_message(message: Message, state: FSMContext):
     
     # Показываем предпросмотр
     preview_text = (
-        "📋 **Предпросмотр рассылки**\n\n"
-        "**Сообщение:**\n"
+        "📋 *Предпросмотр рассылки*\n\n"
+        "*Сообщение:*\n"
         f"{message.text}\n\n"
-        "**Фильтры:** "
+        "*Фильтры:* "
     )
     
     filters = data.get('filters', {})
@@ -202,7 +202,7 @@ async def confirm_broadcast(callback: CallbackQuery, state: FSMContext):
         )
         
         result_text = (
-            "✅ **Рассылка завершена!**\n\n"
+            "✅ *Рассылка завершена!*\n\n"
             f"📊 Статистика:\n"
             f"• Отправлено: {result['sent']}\n"
             f"• Ошибок: {result['errors']}\n"
@@ -213,7 +213,7 @@ async def confirm_broadcast(callback: CallbackQuery, state: FSMContext):
         
     except Exception as e:
         await callback.message.edit_text(
-            f"❌ **Ошибка при отправке рассылки**\n\n"
+            f"❌ *Ошибка при отправке рассылки*\n\n"
             f"Детали: {str(e)}"
         )
     
@@ -229,7 +229,7 @@ async def cancel_broadcast(callback: CallbackQuery, state: FSMContext):
 async def back_to_filters(callback: CallbackQuery, state: FSMContext):
     """Возврат к выбору фильтров"""
     await callback.message.edit_text(
-        "📢 **Создание рассылки**\n\n"
+        "📢 *Создание рассылки*\n\n"
         "Выберите фильтры для целевой аудитории:",
         reply_markup=get_broadcast_filters_keyboard(),
         parse_mode="Markdown"

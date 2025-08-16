@@ -244,7 +244,7 @@ async def show_confirmation(message: Message, state: FSMContext):
     data = await state.get_data()
     
     confirmation_text = (
-        "📋 **Проверь введенные данные:**\n\n"
+        "📋 *Проверь введенные данные:*\n\n"
         f"👤 Пол: {'Мужской' if data['gender'] == 'male' else 'Женский'}\n"
         f"📅 Дата рождения: {data['birth_date'].strftime('%d.%m.%Y')}\n"
         f"🏙️ Город: {data['city']}\n"
@@ -255,7 +255,7 @@ async def show_confirmation(message: Message, state: FSMContext):
         confirmation_text += f"👶 Количество родов: {data.get('childbirth_count', 0)}\n"
         
         if data.get('childbirth_data'):
-            confirmation_text += "\n**Информация о родах:**\n"
+            confirmation_text += "\n*Информация о родах:*\n"
             for birth in data['childbirth_data']:
                 confirmation_text += f"• {birth['number']}-е роды: {birth['date']}, нифас {birth['nifas_days']} дней, хайд до родов {birth['hayd_before']} дней\n"
     

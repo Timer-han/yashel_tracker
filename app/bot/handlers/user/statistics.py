@@ -29,7 +29,7 @@ async def show_user_statistics(message: Message):
     # Если нет данных ни о намазах, ни о постах
     if stats['total_missed'] == 0 and fasting_missed == 0:
         await message.answer(
-            "📊 **Твоя статистика:**\n\n"
+            "📊 *Твоя статистика:*\n\n"
             "📭 Данных пока нет\n\n"
             "• 🔢 Расчет намазов\n"
             "• 📿 Управление постами",
@@ -38,7 +38,7 @@ async def show_user_statistics(message: Message):
         return
     
     # Формируем краткую статистику
-    stats_text = "📊 **Ваша статистика**\n\n"
+    stats_text = "📊 *Ваша статистика*\n\n"
     
     # Намазы
     if stats['total_missed'] > 0:
@@ -46,9 +46,9 @@ async def show_user_statistics(message: Message):
         progress_bar = "▓" * int(prayer_progress / 10) + "░" * (10 - int(prayer_progress / 10))
         
         stats_text += (
-            f"🕌 **Намазы:** {stats['total_completed']}/{stats['total_missed']}\n"
+            f"🕌 *Намазы:* {stats['total_completed']}/{stats['total_missed']}\n"
             f"📊 [{progress_bar}] {prayer_progress:.0f}%\n"
-            f"⏳ Осталось: **{stats['total_remaining']}**\n\n"
+            f"⏳ Осталось: *{stats['total_remaining']}*\n\n"
         )
     
     # Посты
@@ -57,9 +57,9 @@ async def show_user_statistics(message: Message):
         progress_bar = "▓" * int(fasting_progress / 10) + "░" * (10 - int(fasting_progress / 10))
         
         stats_text += (
-            f"📿 **Посты:** {fasting_completed}/{fasting_missed} дней\n"
+            f"📿 *Посты:* {fasting_completed}/{fasting_missed} дней\n"
             f"📊 [{progress_bar}] {fasting_progress:.0f}%\n"
-            f"⏳ Осталось: **{fasting_remaining}** дней\n\n"
+            f"⏳ Осталось: *{fasting_remaining}* дней\n\n"
         )
     
     # Общий прогресс и мотивация
@@ -101,7 +101,7 @@ async def show_prayer_history(callback: CallbackQuery):
         await callback.answer("📝 История изменений пуста", show_alert=True)
         return
     
-    history_text = "📋 **Последние действия:**\n\n"
+    history_text = "📋 *Последние действия:*\n\n"
     
     for record in history:
         prayer_name = config.PRAYER_TYPES.get(record.prayer_type, record.prayer_type)
@@ -126,11 +126,11 @@ async def show_detailed_breakdown(callback: CallbackQuery):
     prayers = await prayer_service.get_user_prayers(callback.from_user.id)
     user = await user_service.get_or_create_user(callback.from_user.id)
     
-    breakdown_text = "🔍 **Детальная статистика**\n\n"
+    breakdown_text = "🔍 *Детальная статистика*\n\n"
     
     # Намазы по типам
     if prayers:
-        breakdown_text += "🕌 **Намазы по типам:**\n"
+        breakdown_text += "🕌 *Намазы по типам:*\n"
         
         # Обычные намазы
         regular_prayers = [p for p in prayers if not p.prayer_type.endswith('_safar')]
@@ -147,7 +147,7 @@ async def show_detailed_breakdown(callback: CallbackQuery):
         # Сафар намазы
         safar_prayers = [p for p in prayers if p.prayer_type.endswith('_safar')]
         if safar_prayers and any(p.total_missed > 0 for p in safar_prayers):
-            breakdown_text += "\n✈️ **Сафар намазы:**\n"
+            breakdown_text += "\n✈️ *Сафар намазы:*\n"
             for prayer in safar_prayers:
                 if prayer.total_missed > 0:
                     prayer_name = config.PRAYER_TYPES[prayer.prayer_type]
@@ -166,7 +166,7 @@ async def show_detailed_breakdown(callback: CallbackQuery):
     if fasting_missed > 0:
         fasting_progress = (fasting_completed / fasting_missed) * 100
         breakdown_text += (
-            f"📿 **Посты Рамадана:**\n"
+            f"📿 *Посты Рамадана:*\n"
             f"• Восполнено: {fasting_completed}/{fasting_missed} дней ({fasting_progress:.0f}%)\n"
         )
         

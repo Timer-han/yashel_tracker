@@ -38,10 +38,10 @@ async def show_fasting_menu(message: Message, state: FSMContext):
     remaining_days = max(0, missed_days - completed_days)
     
     stats_text = (
-        "📿 **Управление постами**\n\n"
-        f"📝 Пропущено дней: **{missed_days}**\n"
-        f"✅ Восполнено дней: **{completed_days}**\n"
-        f"⏳ Осталось: **{remaining_days}**\n"
+        "📿 *Управление постами*\n\n"
+        f"📝 Пропущено дней: *{missed_days}*\n"
+        f"✅ Восполнено дней: *{completed_days}*\n"
+        f"⏳ Осталось: *{remaining_days}*\n"
     )
     
     if missed_days > 0:
@@ -72,7 +72,7 @@ async def start_fast_calculation(callback: CallbackQuery, state: FSMContext):
     reply_markup = get_fasting_calculation_method_keyboard()
     
     await callback.message.edit_text(
-        "🔢 **Расчет пропущенных постов**\n\n"
+        "🔢 *Расчет пропущенных постов*\n\n"
         "Выбери способ расчета:",
         reply_markup=reply_markup,
         parse_mode="Markdown"
@@ -83,7 +83,7 @@ async def start_fast_calculation(callback: CallbackQuery, state: FSMContext):
 # async def calc_fasts_from_age(callback: CallbackQuery, state: FSMContext):
 #     """Расчет постов от совершеннолетия"""
 #     await callback.message.edit_text(
-#         "📅 **Расчет от совершеннолетия**\n\n"
+#         "📅 *Расчет от совершеннолетия*\n\n"
 #         "Этот метод рассчитает посты от возраста совершеннолетия до даты, "
 #         "когда вы начали регулярно соблюдать посты Рамадана.\n\n"
 #         "Введите дату, когда вы начали регулярно соблюдать посты в формате ДД.ММ.ГГГГ:\n"
@@ -128,7 +128,7 @@ async def calc_fasts_between_dates(callback: CallbackQuery, state: FSMContext):
     #     )
 
     await callback.message.edit_text(
-        "📅 **Расчет между датами**\n\n"
+        "📅 *Расчет между датами*\n\n"
         "Введи количество пропущенных лет:\n"
         "Например: 4"
     )
@@ -203,7 +203,7 @@ async def process_fast_period_end(message: Message, state: FSMContext):
 async def calc_fasts_manual(callback: CallbackQuery, state: FSMContext):
     """Ручной ввод количества постов"""
     await callback.message.edit_text(
-        "✋ **Ручной ввод количества**\n\n"
+        "✋ *Ручной ввод количества*\n\n"
         "Введите количество пропущенных дней поста:\n\n"
         "Например: 120"
     )
@@ -236,10 +236,10 @@ async def _show_calculation_result(message: Message, result: dict, state: FSMCon
     """Показ результата расчета с подтверждением"""
     
     # Формируем текст результата
-    result_text = "✅ **Расчет завершен!**\n\n"
+    result_text = "✅ *Расчет завершен!*\n\n"
     
     if method == "manual" or method == "years":
-        result_text += f"📝 **Количество пропущенных дней поста: {result['fasting_days']}**\n\n"
+        result_text += f"📝 *Количество пропущенных дней поста: {result['fasting_days']}*\n\n"
     else:
         if start_date and end_date:
             result_text += f"📅 Период: с {format_date(start_date)} по {format_date(end_date)}\n"
@@ -254,7 +254,7 @@ async def _show_calculation_result(message: Message, result: dict, state: FSMCon
         if result['excluded_days'] > 0:
             result_text += f"❌ Исключено (хайд/нифас): {result['excluded_days']}\n"
         
-        result_text += f"\n📝 **Итого пропущенных дней поста: {result['fasting_days']}**\n\n"
+        result_text += f"\n📝 *Итого пропущенных дней поста: {result['fasting_days']}*\n\n"
         
         # Добавляем детали для женщин
         if result.get('details'):
@@ -291,7 +291,7 @@ async def save_calculation_result(callback: CallbackQuery, state: FSMContext):
     if success:
         await callback.message.edit_text(
             f"✅ Результат сохранен!\n\n"
-            f"📝 Пропущенных дней поста: **{fasting_days}**\n\n"
+            f"📝 Пропущенных дней поста: *{fasting_days}*\n\n"
             "🤲 Пусть Аллах облегчит тебе восполнение постов!",
             parse_mode="Markdown"
         )
@@ -351,10 +351,10 @@ async def handle_fasting_actions(callback: CallbackQuery):
         remaining_days = max(0, missed_days - completed_days)
         
         stats_text = (
-            f"📊 **Детальная статистика постов:**\n\n"
-            f"📝 Всего пропущено: **{missed_days}**\n"
-            f"✅ Восполнено: **{completed_days}**\n"
-            f"⏳ Осталось: **{remaining_days}**\n\n"
+            f"📊 *Детальная статистика постов:*\n\n"
+            f"📝 Всего пропущено: *{missed_days}*\n"
+            f"✅ Восполнено: *{completed_days}*\n"
+            f"⏳ Осталось: *{remaining_days}*\n\n"
         )
         
         if missed_days > 0:
@@ -376,7 +376,7 @@ async def handle_fasting_actions(callback: CallbackQuery):
             stats_text += "🎉 Все посты восполнены! Машаа Ллах!"
         
         # if user.gender == 'female' and user.hayd_average_days:
-        #     stats_text += f"\n\n📋 **Примечание для женщин:**\n"
+        #     stats_text += f"\n\n📋 *Примечание для женщин:*\n"
         #     stats_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
         #     stats_text += f"• Расчет учитывает дни хайда и нифаса\n"
         #     if user.childbirth_count > 0:
@@ -401,10 +401,10 @@ async def handle_fasting_actions(callback: CallbackQuery):
         
         # Отправляем новое меню после сброса
         menu_text = (
-            "📿 **Управление постами**\n\n"
-            f"📝 Пропущено дней: **{updated_user.fasting_missed_days or 0}**\n"
-            f"✅ Восполнено дней: **{updated_user.fasting_completed_days or 0}**\n"
-            f"⏳ Осталось: **{max(0, (updated_user.fasting_missed_days or 0) - (updated_user.fasting_completed_days or 0))}**\n"
+            "📿 *Управление постами*\n\n"
+            f"📝 Пропущено дней: *{updated_user.fasting_missed_days or 0}*\n"
+            f"✅ Восполнено дней: *{updated_user.fasting_completed_days or 0}*\n"
+            f"⏳ Осталось: *{max(0, (updated_user.fasting_missed_days or 0) - (updated_user.fasting_completed_days or 0))}*\n"
         )
         
         await callback.message.edit_text(
@@ -494,26 +494,26 @@ async def send_fasting_action_message_and_update_menu(callback_query, action_typ
         progress_text = ""
     
     notification_text = (
-        f"{action_emoji} **Посты:** {action_text}\n\n"
-        f"📝 Всего пропущено: **{missed_days}**\n"
-        f"✅ Восполнено: **{completed_days}**\n"
-        f"⏳ Осталось: **{remaining_days}**"
+        f"{action_emoji} *Посты:* {action_text}\n\n"
+        f"📝 Всего пропущено: *{missed_days}*\n"
+        f"✅ Восполнено: *{completed_days}*\n"
+        f"⏳ Осталось: *{remaining_days}*"
         f"{progress_text}"
     )
     
     # Мотивационное сообщение
     if remaining_days == 0 and missed_days > 0:
-        notification_text += f"\n\n🎉 **Машаа Ллах!** Все посты восполнены!"
+        notification_text += f"\n\n🎉 *Машаа Ллах!* Все посты восполнены!"
     
     # 1. Редактируем текущее сообщение в уведомление
     await callback_query.message.edit_text(notification_text, parse_mode="Markdown")
     
     # 2. Отправляем новое меню постов
     menu_text = (
-        "📿 **Управление постами**\n\n"
-        f"📝 Пропущено дней: **{missed_days}**\n"
-        f"✅ Восполнено дней: **{completed_days}**\n"
-        f"⏳ Осталось: **{remaining_days}**\n"
+        "📿 *Управление постами*\n\n"
+        f"📝 Пропущено дней: *{missed_days}*\n"
+        f"✅ Восполнено дней: *{completed_days}*\n"
+        f"⏳ Осталось: *{remaining_days}*\n"
     )
     
     if missed_days > 0:
