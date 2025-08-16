@@ -75,9 +75,9 @@ async def process_city(message: Message, state: FSMContext):
     if data.get('gender') == 'female':
         await message.answer(
             "📊 Для точного расчета намазов и постов нужна дополнительная информация.\n\n"
-            "🌙 Укажите среднюю продолжительность хайда в днях (от 3 до 10):\n"
+            "🌙 Укажите ТЕКУЩУЮ среднюю продолжительность хайда в днях (от 3 до 10):\n"
             "Например: 5\n\n"
-            "💡 Если цикл нерегулярный, укажите среднее значение"
+            "💡 Это ваша текущая продолжительность цикла"
         )
         await state.set_state(RegistrationStates.waiting_for_hayd_average)
     else:
@@ -86,7 +86,7 @@ async def process_city(message: Message, state: FSMContext):
 
 @router.message(RegistrationStates.waiting_for_hayd_average)
 async def process_hayd_average(message: Message, state: FSMContext):
-    """Обработка средней продолжительности хайда"""
+    """Обработка текущей продолжительности хайда"""
     try:
         hayd_days = float(message.text.strip())
         if hayd_days < config.HAYD_MIN_DAYS or hayd_days > config.HAYD_MAX_DAYS:
@@ -116,16 +116,16 @@ async def process_childbirth_count(message: Message, state: FSMContext):
         await state.update_data(
             childbirth_count=count, 
             childbirth_data=[], 
-            current_birth=1,
-            hayd_before_first_birth=None
+            current_birth=1
         )
         
         if count > 0:
             data = await state.get_data()
             await message.answer(
-                f"📊 Средняя продолжительность хайда ДО первых родов (дней):\n"
+                f"📊 Средняя продолжительность хайда ДО 1-х родов (дней):\n"
                 f"По умолчанию: {data['hayd_average_days']} дней\n\n"
-                "Введите число или отправьте 0 для использования значения по умолчанию:"
+                "💡 Это продолжительность цикла до первых родов\n"
+                "Введите число или отправьте 0 для использования текущего значения:"
             )
             await state.set_state(RegistrationStates.waiting_for_hayd_before_birth)
         else:
@@ -136,7 +136,7 @@ async def process_childbirth_count(message: Message, state: FSMContext):
 
 @router.message(RegistrationStates.waiting_for_hayd_before_birth)
 async def process_hayd_before_birth(message: Message, state: FSMContext):
-    """Обработка хайда до первых родов"""
+    """Обработка хайда до родов"""
     try:
         data = await state.get_data()
         hayd_before = float(message.text.strip())
@@ -147,10 +147,11 @@ async def process_hayd_before_birth(message: Message, state: FSMContext):
             await message.answer(f"❌ Продолжительность должна быть от {config.HAYD_MIN_DAYS} до {config.HAYD_MAX_DAYS} дней.")
             return
         
-        await state.update_data(hayd_before_first_birth=hayd_before)
+        await state.update_data(current_hayd_before=hayd_before)
         
+        current_birth = data['current_birth']
         await message.answer(
-            f"📅 Введите дату 1-х родов в формате ДД.ММ.ГГГГ:\n"
+            f"📅 Введите дату {current_birth}-х родов в формате ДД.ММ.ГГГГ:\n"
             "Например: 15.03.2020"
         )
         await state.set_state(RegistrationStates.waiting_for_childbirth_date)
@@ -176,8 +177,9 @@ async def process_childbirth_date(message: Message, state: FSMContext):
         
         await state.update_data(current_birth_date=birth_date)
         
+        current_birth = data['current_birth']
         await message.answer(
-            f"🌙 Продолжительность нифаса после {data['current_birth']}-х родов (дней):\n"
+            f"🌙 Продолжительность нифаса после {current_birth}-х родов (дней):\n"
             f"Максимум: {config.NIFAS_MAX_DAYS} дней\n\n"
             "Введите количество дней:"
         )
@@ -202,67 +204,31 @@ async def process_nifas_days(message: Message, state: FSMContext):
         childbirth_data = data['childbirth_data']
         current_birth = data['current_birth']
         
-        # Сохраняем данные о текущих родах
+        # Сохраняем данные о текущих родах (без hayd_after!)
         birth_info = {
             'number': current_birth,
             'date': data['current_birth_date'].isoformat(),
             'nifas_days': nifas_days,
-            'hayd_before': data.get('hayd_before_first_birth', data['hayd_average_days'])
+            'hayd_before': data['current_hayd_before']
         }
         
-        # Спрашиваем про хайд после родов, если есть еще роды
-        if current_birth < data['childbirth_count']:
-            await message.answer(
-                f"📊 Средняя продолжительность хайда ПОСЛЕ {current_birth}-х родов (дней):\n"
-                "Введите число от 3 до 10:"
-            )
-            await state.update_data(
-                temp_birth_info=birth_info
-            )
-            await state.set_state(RegistrationStates.waiting_for_hayd_after_birth)
-        else:
-            # Это последние роды, сохраняем и завершаем
-            birth_info['hayd_after'] = data['hayd_average_days']  # Используем текущее среднее
-            childbirth_data.append(birth_info)
-            await state.update_data(childbirth_data=childbirth_data)
-            await show_confirmation(message, state)
-        
-    except ValueError:
-        await message.answer("❌ Введите число.")
-
-@router.message(RegistrationStates.waiting_for_hayd_after_birth)
-async def process_hayd_after_birth(message: Message, state: FSMContext):
-    """Обработка хайда после родов"""
-    try:
-        hayd_after = float(message.text.strip())
-        if hayd_after < config.HAYD_MIN_DAYS or hayd_after > config.HAYD_MAX_DAYS:
-            await message.answer(f"❌ Продолжительность должна быть от {config.HAYD_MIN_DAYS} до {config.HAYD_MAX_DAYS} дней.")
-            return
-        
-        data = await state.get_data()
-        
-        # Сохраняем информацию о родах
-        birth_info = data['temp_birth_info']
-        birth_info['hayd_after'] = hayd_after
-        
-        childbirth_data = data['childbirth_data']
         childbirth_data.append(birth_info)
         
-        current_birth = data['current_birth'] + 1
-        
-        if current_birth <= data['childbirth_count']:
-            # Есть еще роды
+        # Переходим к следующим родам если есть
+        if current_birth < data['childbirth_count']:
+            next_birth = current_birth + 1
             await state.update_data(
                 childbirth_data=childbirth_data,
-                current_birth=current_birth,
-                hayd_before_first_birth=hayd_after  # Хайд после предыдущих родов становится хайдом до следующих
+                current_birth=next_birth
             )
             
             await message.answer(
-                f"📅 Введите дату {current_birth}-х родов в формате ДД.ММ.ГГГГ:\n"
-                "Например: 15.03.2022"
+                f"📊 Средняя продолжительность хайда ДО {next_birth}-х родов (дней):\n"
+                f"По умолчанию: {data['hayd_average_days']} дней\n\n"
+                "💡 Это продолжительность цикла между родами\n"
+                "Введите число или отправьте 0 для использования текущего значения:"
             )
-            await state.set_state(RegistrationStates.waiting_for_childbirth_date)
+            await state.set_state(RegistrationStates.waiting_for_hayd_before_birth)
         else:
             # Все роды обработаны
             await state.update_data(childbirth_data=childbirth_data)
@@ -283,13 +249,13 @@ async def show_confirmation(message: Message, state: FSMContext):
     )
     
     if data['gender'] == 'female':
-        confirmation_text += f"\n🌙 Средний хайд: {data.get('hayd_average_days', 0)} дней\n"
+        confirmation_text += f"\n🌙 Текущий хайд: {data.get('hayd_average_days', 0)} дней\n"
         confirmation_text += f"👶 Количество родов: {data.get('childbirth_count', 0)}\n"
         
         if data.get('childbirth_data'):
             confirmation_text += "\n**Информация о родах:**\n"
             for birth in data['childbirth_data']:
-                confirmation_text += f"• {birth['number']}-е роды: {birth['date']}, нифас {birth['nifas_days']} дней\n"
+                confirmation_text += f"• {birth['number']}-е роды: {birth['date']}, нифас {birth['nifas_days']} дней, хайд до родов {birth['hayd_before']} дней\n"
     
     confirmation_text += "\nВсе верно?"
     
@@ -309,7 +275,7 @@ async def confirm_registration(callback: CallbackQuery, state: FSMContext):
     adult_age = config.ADULT_AGE_FEMALE if data['gender'] == 'female' else config.ADULT_AGE_MALE
     adult_date = data['birth_date'].replace(year=data['birth_date'].year + adult_age)
     
-    # Подготавливаем данные о родах для JSON
+    # Подготавливаем данные о родах для JSON (без hayd_after)
     childbirth_data_json = None
     if data.get('childbirth_data'):
         childbirth_data_json = json.dumps(data['childbirth_data'])

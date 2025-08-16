@@ -62,36 +62,76 @@ class CalculationService:
                                            hayd_average_days: float = None,
                                            childbirth_data: List[Dict] = None) -> int:
         """Вычисление дней, когда женщина не читает намаз"""
+        if not hayd_average_days:
+            hayd_average_days = 0
+            
         excluded_days = 0
         
-        # Расчет дней хайда
-        if hayd_average_days and hayd_average_days > 0:
-            total_months = (end_date - start_date).days / 30.0
-            hayd_total = int(total_months * min(hayd_average_days, config.HAYD_MAX_DAYS))
-            excluded_days += hayd_total
-        
-        # Расчет дней нифаса
+        # Парсим и сортируем данные о родах
+        births = []
         if childbirth_data:
             for birth in childbirth_data:
                 try:
                     birth_date = date.fromisoformat(birth['date'])
                     if start_date <= birth_date <= end_date:
-                        nifas_days = min(birth.get('nifas_days', 0), config.NIFAS_MAX_DAYS)
-                        excluded_days += nifas_days
-                        
-                        # Корректируем хайд после родов
-                        if 'hayd_after' in birth:
-                            # Период после родов до конца расчетного периода
-                            days_after_birth = (end_date - birth_date).days
-                            months_after = days_after_birth / 30.0
-                            # Новый хайд после родов
-                            new_hayd = int(months_after * min(birth['hayd_after'], config.HAYD_MAX_DAYS))
-                            # Вычитаем старый хайд за этот период и добавляем новый
-                            old_hayd = int(months_after * min(hayd_average_days or 0, config.HAYD_MAX_DAYS))
-                            excluded_days = excluded_days - old_hayd + new_hayd
+                        births.append({
+                            'date': birth_date,
+                            'nifas_days': min(birth.get('nifas_days', 0), config.NIFAS_MAX_DAYS),
+                            'hayd_before': birth.get('hayd_before', hayd_average_days)
+                        })
                 except Exception as e:
                     logger.warning(f"Ошибка обработки данных о родах: {e}")
                     continue
+        
+        # Сортируем роды по дате
+        births.sort(key=lambda x: x['date'])
+        
+        # Создаем периоды для расчета
+        periods = []
+        current_start = start_date
+        
+        for birth in births:
+            # Период до родов
+            if current_start < birth['date']:
+                periods.append({
+                    'start': current_start,
+                    'end': birth['date'],
+                    'hayd_days': birth['hayd_before'],
+                    'type': 'before_birth'
+                })
+            
+            # Период нифаса (дни исключаются полностью)
+            nifas_end = birth['date'] + timedelta(days=birth['nifas_days'])
+            excluded_days += min(birth['nifas_days'], (end_date - birth['date']).days)
+            
+            # Следующий период начинается после нифаса
+            current_start = min(nifas_end, end_date)
+        
+        # Период после последних родов до конца
+        if current_start < end_date:
+            periods.append({
+                'start': current_start,
+                'end': end_date,
+                'hayd_days': hayd_average_days,  # Текущая продолжительность
+                'type': 'after_last_birth'
+            })
+        
+        # Если родов не было, используем весь период с текущим хайдом
+        if not births:
+            periods.append({
+                'start': start_date,
+                'end': end_date,
+                'hayd_days': hayd_average_days,
+                'type': 'no_births'
+            })
+        
+        # Рассчитываем дни хайда для каждого периода
+        for period in periods:
+            period_days = (period['end'] - period['start']).days
+            if period_days > 0 and period['hayd_days'] > 0:
+                period_months = period_days / 30.0
+                hayd_days_in_period = int(period_months * min(period['hayd_days'], config.HAYD_MAX_DAYS))
+                excluded_days += min(hayd_days_in_period, period_days)
         
         return min(excluded_days, (end_date - start_date).days)
     
