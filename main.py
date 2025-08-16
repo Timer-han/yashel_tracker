@@ -7,6 +7,7 @@ from app.core.config import config
 from app.core.database.connection import db_manager
 from app.bot.handlers import register_all_handlers
 from app.tasks.scheduler import start_scheduler
+from app import __version__, __author__
 
 # Настройка логирования
 logging.basicConfig(
@@ -17,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """Главная функция"""
-    logger.info("🚀 Запуск Яшел Трекер...")
+    logger.info(f"🚀 Запуск Яшел Трекер v{__version__} (автор: {__author__})...")
+
+    # logger.info("🚀 Запуск Яшел Трекер...")
     
     # Инициализация базы данных
     await db_manager.initialize_database()

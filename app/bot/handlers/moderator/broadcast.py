@@ -82,7 +82,32 @@ async def process_filter(callback: CallbackQuery, state: FSMContext):
     await state.update_data(filters=current_filters)
     
     # Переходим к вводу сообщения
-    await _show_message_input(callback, current_filters)
+    await callback.message.edit_text(_get_filter_text(current_filters))
+
+    await state.set_state(ModeratorStates.broadcast_message)
+
+def _get_filter_text(filters: dict):
+    filter_text = "📢 **Настройка рассылки**\n\n"
+    filter_text += "**Выбранные фильтры:**\n"
+    
+    if 'gender' in filters:
+        gender_text = "Мужчины" if filters['gender'] == 'male' else "Женщины"
+        filter_text += f"👤 Пол: {gender_text}\n"
+    
+    if 'city' in filters:
+        filter_text += f"📍 Город: {filters['city']}\n"
+        
+    if 'age_range' in filters:
+        min_age, max_age = filters['age_range']
+        age_text = f"{min_age}-{max_age}" if max_age < 150 else f"{min_age}+"
+        filter_text += f"🎂 Возраст: {age_text}\n"
+    
+    if not filters:
+        filter_text += "Всем пользователям\n"
+    
+    filter_text += "\n📝 Теперь введите текст сообщения для рассылки:"
+    
+    return filter_text
 
 async def _show_message_input(callback: CallbackQuery, filters: dict):
     """Показ интерфейса ввода сообщения"""
@@ -118,7 +143,11 @@ async def process_broadcast_message(message: Message, state: FSMContext):
         filters = data.get('filters', {})
         filters['city'] = message.text.strip()
         await state.update_data(filters=filters, waiting_for=None)
-        await _show_message_input(message, filters)
+        await message.answer(
+            _get_filter_text(filters),
+            parse_mode="Markdown"
+        )
+        # await _show_message_input(, filters)
         await state.set_state(ModeratorStates.broadcast_message)
         return
     

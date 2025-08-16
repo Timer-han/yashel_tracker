@@ -2,6 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
+from app import __version__
 
 from ...keyboards.user.settings import get_settings_menu_keyboard, get_change_confirmation_keyboard
 from ...keyboards.user.registration import get_gender_keyboard, get_gender_inline_keyboard
@@ -9,6 +10,7 @@ from ....core.config import escape_markdown
 from ....core.services.user_service import UserService
 from ....core.services.prayer_service import PrayerService
 from ...states.settings import SettingsStates
+
 
 router = Router()
 user_service = UserService()
@@ -120,28 +122,119 @@ async def process_new_city(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "export_data")
 async def export_data(callback: CallbackQuery):
-    """Экспорт данных пользователя"""
+    """Экспорт данных пользователя с полной информацией"""
     user = await user_service.get_or_create_user(callback.from_user.id)
     stats = await prayer_service.get_user_statistics(callback.from_user.id)
     
     export_text = (
         f"📊 **Экспорт данных пользователя**\n\n"
-        f"**Профиль:**\n"
-        f"• Имя: {user.display_name}\n"
+        f"**👤 Профиль:**\n"
+        f"• Telegram ID: `{user.telegram_id}`\n"
+        f"• Имя: {escape_markdown(user.display_name)}\n"
         f"• Пол: {'Мужской' if user.gender == 'male' else 'Женский' if user.gender == 'female' else 'Не указан'}\n"
         f"• Дата рождения: {user.birth_date.strftime('%d.%m.%Y') if user.birth_date else 'Не указана'}\n"
         f"• Город: {user.city or 'Не указан'}\n"
-        f"• Дата регистрации: {user.created_at.strftime('%d.%m.%Y %H:%M') if hasattr(user, 'created_at') else 'Неизвестно'}\n\n"
-        f"**Статистика намазов:**\n"
-        f"• Всего пропущено: {stats['total_missed']}\n"
-        f"• Восполнено: {stats['total_completed']}\n"
-        f"• Осталось: {stats['total_remaining']}\n\n"
-        f"**Детали по намазам:**\n"
+        f"• Роль: {user.role}\n"
+        f"• Дата регистрации: {user.created_at.strftime('%d.%m.%Y %H:%M') if hasattr(user, 'created_at') and user.created_at else 'Неизвестно'}\n\n"
     )
     
+    # Статистика намазов
+    export_text += (
+        f"**🕌 Статистика намазов:**\n"
+        f"• Всего пропущено: {stats['total_missed']}\n"
+        f"• Восполнено: {stats['total_completed']}\n"
+        f"• Осталось: {stats['total_remaining']}\n"
+    )
+    
+    if stats['total_missed'] > 0:
+        progress = (stats['total_completed'] / stats['total_missed']) * 100
+        export_text += f"• Прогресс восполнения: {progress:.1f}%\n"
+    
+    export_text += "\n**📋 Детали по намазам:**\n"
     for prayer_name, data in stats['prayers'].items():
         if data['total'] > 0:
-            export_text += f"• {prayer_name}: {data['completed']}/{data['total']}\n"
+            prayer_progress = (data['completed'] / data['total']) * 100 if data['total'] > 0 else 0
+            export_text += f"• {prayer_name}: {data['completed']}/{data['total']} ({prayer_progress:.1f}%)\n"
+    
+    # Статистика постов
+    missed_fasts = user.fasting_missed_days or 0
+    completed_fasts = user.fasting_completed_days or 0
+    remaining_fasts = max(0, missed_fasts - completed_fasts)
+    
+    export_text += (
+        f"\n**📿 Статистика постов:**\n"
+        f"• Всего пропущено дней: {missed_fasts}\n"
+        f"• Восполнено дней: {completed_fasts}\n"
+        f"• Осталось дней: {remaining_fasts}\n"
+    )
+    
+    if missed_fasts > 0:
+        fast_progress = (completed_fasts / missed_fasts) * 100
+        export_text += f"• Прогресс восполнения: {fast_progress:.1f}%\n"
+    
+    # Специальная информация для женщин
+    if user.gender == 'female':
+        export_text += f"\n**👩 Информация для женщин:**\n"
+        
+        if user.hayd_average_days:
+            export_text += f"• Текущая продолжительность хайда: {user.hayd_average_days} дней\n"
+        else:
+            export_text += f"• Продолжительность хайда: не указана\n"
+        
+        export_text += f"• Количество родов: {user.childbirth_count or 0}\n"
+        
+        # Детальная информация о родах
+        if user.childbirth_count and user.childbirth_count > 0:
+            childbirth_info = user.get_childbirth_info()
+            if childbirth_info:
+                export_text += f"\n**👶 Детали родов:**\n"
+                for i, birth in enumerate(childbirth_info, 1):
+                    birth_date = birth.get('date', 'неизвестно')
+                    nifas_days = birth.get('nifas_days', 0)
+                    hayd_before = birth.get('hayd_before', 0)
+                    
+                    export_text += (
+                        f"• {i}-е роды:\n"
+                        f"  - Дата: {birth_date}\n"
+                        f"  - Нифас: {nifas_days} дней\n"
+                        f"  - Хайд до родов: {hayd_before} дней\n"
+                    )
+        
+        # # Дополнительные расчеты для женщин
+        # if user.birth_date and user.hayd_average_days:
+        #     from ....core.services.calculation_service import CalculationService
+        #     calc_service = CalculationService()
+        #     age = calc_service.calculate_age(user.birth_date)
+            
+        #     # Примерное количество циклов за репродуктивный период
+        #     reproductive_years = max(0, age - 9)  # с 9 лет (совершеннолетие для девочек)
+        #     approximate_cycles = reproductive_years * 12  # примерно 12 циклов в год
+            
+        #     export_text += (
+        #         f"\n**📊 Дополнительные расчеты:**\n"
+        #         f"• Возраст: {age} лет\n"
+        #         f"• Репродуктивный период: ~{reproductive_years} лет\n"
+        #         f"• Примерное количество циклов: ~{approximate_cycles}\n"
+        #     )
+    
+    # Системная информация
+    export_text += (
+        f"\n**⚙️ Системная информация:**\n"
+        f"• Дата совершеннолетия: {user.adult_date.strftime('%d.%m.%Y') if user.adult_date else 'Не установлена'}\n"
+        f"• Дата начала намазов: {user.prayer_start_date.strftime('%d.%m.%Y') if user.prayer_start_date else 'Не установлена'}\n"
+        f"• Последняя активность: {user.last_activity.strftime('%d.%m.%Y %H:%M') if hasattr(user, 'last_activity') and user.last_activity else 'Неизвестно'}\n"
+        f"• Статус регистрации: {'Завершена' if user.is_registered else 'Не завершена'}\n"
+    )
+    
+    # Информация об экспорте
+    export_text += (
+        f"\n**📤 Информация об экспорте:**\n"
+        f"• Дата экспорта: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n"
+        f"• Версия системы: Яшел Трекер v{__version__}\n"
+        f"• Формат данных: Полный экспорт\n"
+        f"\n💾 Сохраните эти данные в надежном месте.\n"
+        f"📋 Эти данные можно использовать для восстановления прогресса при необходимости."
+    )
     
     await callback.message.edit_text(export_text, parse_mode="Markdown")
 
