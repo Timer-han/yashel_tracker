@@ -24,8 +24,8 @@ def get_fasting_calculation_method_keyboard() -> InlineKeyboardMarkup:
     #     callback_data="fast_calc_from_age"
     # ))
     builder.add(InlineKeyboardButton(
-        text="📅 Между двумя датами", 
-        callback_data="fast_calc_between_dates"
+        text="📅 Задать количество лет", 
+        callback_data="fast_calc_years"
     ))
     builder.add(InlineKeyboardButton(
         text="✋ Ввести количество вручную", 
@@ -47,7 +47,7 @@ def get_female_fasting_calculation_method_keyboard() -> InlineKeyboardMarkup:
     # ))
     # builder.add(InlineKeyboardButton(
     #     text="📅 Между двумя датами", 
-    #     callback_data="fast_calc_between_dates"
+    #     callback_data="fast_calc_years"
     # ))
     builder.add(InlineKeyboardButton(
         text="✋ Ввести количество вручную", 

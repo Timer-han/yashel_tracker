@@ -27,8 +27,8 @@ async def show_fasting_menu(message: Message, state: FSMContext):
     
     if not user.is_registered:
         await message.answer(
-            "📊 Сначала пройдите регистрацию для работы с постами.\n"
-            "Используйте команду /start"
+            "📊 Сначала пройди регистрацию для работы с постами.\n"
+            "Используй команду /start"
         )
         return
     
@@ -61,17 +61,19 @@ async def start_fast_calculation(callback: CallbackQuery, state: FSMContext):
     user = await user_service.get_or_create_user(callback.from_user.id)
     
     if not user.is_registered:
-        await callback.answer("❌ Сначала пройдите регистрацию", show_alert=True)
+        await callback.answer("❌ Сначала пройди регистрацию", show_alert=True)
         return
     
-    if user.gender == 'male':
-        reply_markup = get_fasting_calculation_method_keyboard()
-    else:
-        reply_markup = get_female_fasting_calculation_method_keyboard()
+    # if user.gender == 'male':
+    #     reply_markup = get_fasting_calculation_method_keyboard()
+    # else:
+    #     reply_markup = get_female_fasting_calculation_method_keyboard()
         
+    reply_markup = get_fasting_calculation_method_keyboard()
+    
     await callback.message.edit_text(
         "🔢 **Расчет пропущенных постов**\n\n"
-        "Выберите способ расчета:",
+        "Выбери способ расчета:",
         reply_markup=reply_markup,
         parse_mode="Markdown"
     )
@@ -114,67 +116,88 @@ async def start_fast_calculation(callback: CallbackQuery, state: FSMContext):
     
 #     await _show_calculation_result(message, result, state, fast_start_date)
 
-@router.callback_query(FastingStates.choosing_method, F.data == "fast_calc_between_dates")
+@router.callback_query(FastingStates.choosing_method, F.data == "fast_calc_years")
 async def calc_fasts_between_dates(callback: CallbackQuery, state: FSMContext):
-    """Расчет постов между двумя датами"""
-    user = await user_service.get_or_create_user(callback.from_user.id)
-    if user.gender == 'female':
-        await callback.answer(
-            "❌ Для женщин этот метод не подходит.\n"
-            "Используйте другой метод расчета постов.",
-            reply_markup=get_female_fasting_calculation_method_keyboard()
-        )
+    """Расчет постов за года"""
+    # user = await user_service.get_or_create_user(callback.from_user.id)
+    # if user.gender == 'female':
+    #     await callback.answer(
+    #         "❌ Для женщин этот метод не подходит.\n"
+    #         "Используйте другой метод расчета постов.",
+    #         reply_markup=get_female_fasting_calculation_method_keyboard()
+    #     )
 
     await callback.message.edit_text(
         "📅 **Расчет между датами**\n\n"
-        "Введите начальную дату (с какой даты считать пропущенные посты) в формате ДД.ММ.ГГГГ:\n"
-        "Например: 01.01.2015"
+        "Введи количество пропущенных лет:\n"
+        "Например: 4"
     )
-    await state.set_state(FastingStates.waiting_for_fast_period_start)
+    await state.set_state(FastingStates.waiting_for_fast_year_count)
 
-@router.message(FastingStates.waiting_for_fast_period_start)
-async def process_fast_period_start(message: Message, state: FSMContext):
-    """Обработка начальной даты периода постов"""
-    start_date = parse_date(message.text)
-    if not start_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
-        return
+# @router.message(FastingStates.waiting_for_fast_period_start)
+# async def process_fast_period_start(message: Message, state: FSMContext):
+#     """Обработка начальной даты периода постов"""
+#     start_date = parse_date(message.text)
+#     if not start_date:
+#         await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+#         return
     
-    await state.update_data(fast_period_start=start_date)
+#     await state.update_data(fast_period_start=start_date)
     
-    await message.answer(
-        "📅 Введите конечную дату (по какую дату считать пропущенные посты) в формате ДД.ММ.ГГГГ:\n"
-        "Например: 01.06.2020"
-    )
-    await state.set_state(FastingStates.waiting_for_fast_period_end)
+#     await message.answer(
+#         "📅 Введите конечную дату (по какую дату считать пропущенные посты) в формате ДД.ММ.ГГГГ:\n"
+#         "Например: 01.06.2020"
+#     )
+#     await state.set_state(FastingStates.waiting_for_fast_period_end)
 
-@router.message(FastingStates.waiting_for_fast_period_end)
+# @router.message(FastingStates.waiting_for_fast_period_end)
+# async def process_fast_period_end(message: Message, state: FSMContext):
+#     """Обработка конечной даты периода постов"""
+#     end_date = parse_date(message.text)
+#     if not end_date:
+#         await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+#         return
+    
+#     data = await state.get_data()
+#     start_date = data['fast_period_start']
+    
+#     if end_date <= start_date:
+#         await message.answer("❌ Конечная дата должна быть больше начальной даты.")
+#         return
+    
+#     user = await user_service.get_or_create_user(message.from_user.id)
+    
+#     # Рассчитываем посты между датами
+#     result = fasting_calc_service.calculate_fasts_between_dates(
+#         start_date=start_date,
+#         end_date=end_date,
+#         gender=user.gender or 'male',
+#         hayd_average_days=user.hayd_average_days,
+#         childbirth_data=user.get_childbirth_info()
+#     )
+    
+#     await _show_calculation_result(message, result, state, end_date, start_date)
+    
+@router.message(FastingStates.waiting_for_fast_year_count)
 async def process_fast_period_end(message: Message, state: FSMContext):
-    """Обработка конечной даты периода постов"""
-    end_date = parse_date(message.text)
-    if not end_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
-        return
+    """Обработка пропущенных"""
     
-    data = await state.get_data()
-    start_date = data['fast_period_start']
-    
-    if end_date <= start_date:
-        await message.answer("❌ Конечная дата должна быть больше начальной даты.")
+    try:
+        years = int(message.text.strip())
+        if years < 0:
+            await message.answer("❌ Количество лет не может быть отрицательным.")
+            return
+    except ValueError:
+        await message.answer("❌ Пожалуйста, введите число.")
         return
+
     
     user = await user_service.get_or_create_user(message.from_user.id)
     
     # Рассчитываем посты между датами
-    result = fasting_calc_service.calculate_fasts_between_dates(
-        start_date=start_date,
-        end_date=end_date,
-        gender=user.gender or 'male',
-        hayd_average_days=user.hayd_average_days,
-        childbirth_data=user.get_childbirth_info()
-    )
+    result = fasting_calc_service.calculate_fasts_by_years(years=years)
     
-    await _show_calculation_result(message, result, state, end_date, start_date)
+    await _show_calculation_result(message, result, state, method='years')
 
 @router.callback_query(FastingStates.choosing_method, F.data == "fast_calc_manual")
 async def calc_fasts_manual(callback: CallbackQuery, state: FSMContext):
@@ -215,7 +238,7 @@ async def _show_calculation_result(message: Message, result: dict, state: FSMCon
     # Формируем текст результата
     result_text = "✅ **Расчет завершен!**\n\n"
     
-    if method == "manual":
+    if method == "manual" or method == "years":
         result_text += f"📝 **Количество пропущенных дней поста: {result['fasting_days']}**\n\n"
     else:
         if start_date and end_date:
@@ -269,7 +292,7 @@ async def save_calculation_result(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(
             f"✅ Результат сохранен!\n\n"
             f"📝 Пропущенных дней поста: **{fasting_days}**\n\n"
-            "🤲 Пусть Аллах облегчит вам восполнение постов!",
+            "🤲 Пусть Аллах облегчит тебе восполнение постов!",
             parse_mode="Markdown"
         )
     else:

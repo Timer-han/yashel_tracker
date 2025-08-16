@@ -24,13 +24,13 @@ async def process_gender(message: Message, state: FSMContext):
     elif message.text == "👩 Женский":
         gender = "female"
     else:
-        await message.answer("Пожалуйста, выберите пол, используя кнопки.")
+        await message.answer("Пожалуйста, выбери пол, используя кнопки.")
         return
     
     await state.update_data(gender=gender)
     
     await message.answer(
-        "📅 Введите вашу дату рождения в формате ДД.ММ.ГГГГ\n"
+        "📅 Введи дату рождения в формате ДД.ММ.ГГГГ\n"
         "Например: 15.03.1990",
         reply_markup=None
     )
@@ -46,20 +46,20 @@ async def process_birth_date(message: Message, state: FSMContext):
         today = date.today()
         age = today.year - birth_date.year
         if age < 8 or age > 100:
-            await message.answer("❌ Пожалуйста, введите корректную дату рождения.")
+            await message.answer("❌ Пожалуйста, введи корректную дату рождения.")
             return
         
         await state.update_data(birth_date=birth_date)
         
         await message.answer(
-            "🏙️ В каком городе вы проживаете?\n"
+            "🏙️ В каком городе ты проживаешь?\n"
             "Например: Москва, Казань, Баку"
         )
         await state.set_state(RegistrationStates.waiting_for_city)
         
     except ValueError:
         await message.answer(
-            "❌ Неверный формат даты. Пожалуйста, введите дату в формате ДД.ММ.ГГГГ\n"
+            "❌ Неверный формат даты. Пожалуйста, введи дату в формате ДД.ММ.ГГГГ\n"
             "Например: 15.03.1990"
         )
 
@@ -75,7 +75,7 @@ async def process_city(message: Message, state: FSMContext):
     # if data.get('gender') == 'female':
     #     await message.answer(
     #         "📊 Для точного расчета намазов и постов нужна дополнительная информация.\n\n"
-    #         "🌙 Укажите ТЕКУЩУЮ среднюю продолжительность хайда в днях (от 3 до 10):\n"
+    #         "🌙 Укажи ТЕКУЩУЮ среднюю продолжительность хайда в днях (от 3 до 10):\n"
     #         "Например: 5\n\n"
     #         "💡 Это ваша текущая продолжительность цикла"
     #     )
@@ -99,12 +99,12 @@ async def process_hayd_average(message: Message, state: FSMContext):
         
         await message.answer(
             "👶 Сколько у вас было родов?\n\n"
-            "Введите число (0 - если не было):"
+            "Введи число (0 - если не было):"
         )
         await state.set_state(RegistrationStates.waiting_for_childbirth_count)
         
     except ValueError:
-        await message.answer(f"❌ Введите число от {config.HAYD_MIN_DAYS} до {config.HAYD_MAX_DAYS}.")
+        await message.answer(f"❌ Введи число от {config.HAYD_MIN_DAYS} до {config.HAYD_MAX_DAYS}.")
 
 @router.message(RegistrationStates.waiting_for_childbirth_count)
 async def process_childbirth_count(message: Message, state: FSMContext):
@@ -127,14 +127,14 @@ async def process_childbirth_count(message: Message, state: FSMContext):
                 f"📊 Средняя продолжительность хайда ДО 1-х родов (дней):\n"
                 f"По умолчанию: {data['hayd_average_days']} дней\n\n"
                 "💡 Это продолжительность цикла до первых родов\n"
-                "Введите число или отправьте 0 для использования текущего значения:"
+                "Введи число или отправьте 0 для использования текущего значения:"
             )
             await state.set_state(RegistrationStates.waiting_for_hayd_before_birth)
         else:
             await show_confirmation(message, state)
             
     except ValueError:
-        await message.answer("❌ Введите число.")
+        await message.answer("❌ Введи число.")
 
 @router.message(RegistrationStates.waiting_for_hayd_before_birth)
 async def process_hayd_before_birth(message: Message, state: FSMContext):
@@ -153,13 +153,13 @@ async def process_hayd_before_birth(message: Message, state: FSMContext):
         
         current_birth = data['current_birth']
         await message.answer(
-            f"📅 Введите дату {current_birth}-х родов в формате ДД.ММ.ГГГГ:\n"
+            f"📅 Введи дату {current_birth}-х родов в формате ДД.ММ.ГГГГ:\n"
             "Например: 15.03.2020"
         )
         await state.set_state(RegistrationStates.waiting_for_childbirth_date)
         
     except ValueError:
-        await message.answer("❌ Введите число.")
+        await message.answer("❌ Введи число.")
 
 @router.message(RegistrationStates.waiting_for_childbirth_date)
 async def process_childbirth_date(message: Message, state: FSMContext):
@@ -183,13 +183,13 @@ async def process_childbirth_date(message: Message, state: FSMContext):
         await message.answer(
             f"🌙 Продолжительность нифаса после {current_birth}-х родов (дней):\n"
             f"Максимум: {config.NIFAS_MAX_DAYS} дней\n\n"
-            "Введите количество дней:"
+            "Введи количество дней:"
         )
         await state.set_state(RegistrationStates.waiting_for_nifas_days)
         
     except ValueError:
         await message.answer(
-            "❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ\n"
+            "❌ Неверный формат даты. Используй формат ДД.ММ.ГГГГ\n"
             "Например: 15.03.2020"
         )
 
@@ -228,7 +228,7 @@ async def process_nifas_days(message: Message, state: FSMContext):
                 f"📊 Средняя продолжительность хайда ДО {next_birth}-х родов (дней):\n"
                 f"По умолчанию: {data['hayd_average_days']} дней\n\n"
                 "💡 Это продолжительность цикла между родами\n"
-                "Введите число или отправьте 0 для использования текущего значения:"
+                "Введи число или отправьте 0 для использования текущего значения:"
             )
             await state.set_state(RegistrationStates.waiting_for_hayd_before_birth)
         else:
@@ -244,7 +244,7 @@ async def show_confirmation(message: Message, state: FSMContext):
     data = await state.get_data()
     
     confirmation_text = (
-        "📋 **Проверьте введенные данные:**\n\n"
+        "📋 **Проверь введенные данные:**\n\n"
         f"👤 Пол: {'Мужской' if data['gender'] == 'male' else 'Женский'}\n"
         f"📅 Дата рождения: {data['birth_date'].strftime('%d.%m.%Y')}\n"
         f"🏙️ Город: {data['city']}\n"
@@ -315,21 +315,24 @@ async def confirm_registration(callback: CallbackQuery, state: FSMContext):
             welcome_text = "🏠 Главное меню"
         
         await callback.message.answer(
-            f"🕌 Добро пожаловать в Яшел Трекер!\n\n"
+            f"🕌 Добро пожаловать в Яшел Трекер!\n"
+            f"Я — твой помощник в подсчёте и восполнении пропущенных намазов и постов по ханафитскому мазхабу\n\n"
+            f"как разобраться в процессе восполнения поклонений, мы рассказываем в нашем канале (https://t.me/qazaatracker)\n"
+            f"Изучи информацию и возвращайся ко мне 😁\n\n"
             f"{welcome_text}\n\n"
-            "Теперь вы можете приступить к расчету пропущенных намазов и постов.",
+            f"Теперь можешь приступить к расчету пропущенных намазов и постов)",
             reply_markup=keyboard
         )
         
         await state.clear()
     else:
-        await callback.message.edit_text("❌ Ошибка при сохранении данных. Попробуйте еще раз.")
+        await callback.message.edit_text("❌ Ошибка при сохранении данных. Попробуй еще раз.")
 
 @router.callback_query(RegistrationStates.confirmation, F.data == "edit_registration")
 async def edit_registration(callback: CallbackQuery, state: FSMContext):
     """Редактирование регистрации"""
     await callback.message.edit_text(
-        "👤 Укажите ваш пол:",
+        "👤 Укажи пол:",
         reply_markup=get_gender_keyboard()
     )
     await state.set_state(RegistrationStates.waiting_for_gender)

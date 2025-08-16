@@ -10,19 +10,19 @@ def get_calculation_method_keyboard() -> InlineKeyboardMarkup:
     #     callback_data="calc_from_age"
     # ))
     builder.add(InlineKeyboardButton(
-        text="📅 Между двумя датами", 
+        text="Знаю дату совершеннолетия", 
         callback_data="calc_between_dates"
     ))
+    # builder.add(InlineKeyboardButton(
+    #     text="📝 Задать даты совершеннолетия", 
+    #     callback_data="calc_custom_adult"
+    # ))
     builder.add(InlineKeyboardButton(
-        text="📝 Задать даты совершеннолетия", 
-        callback_data="calc_custom_adult"
-    ))
-    builder.add(InlineKeyboardButton(
-        text="✋ Ввести вручную", 
+        text="Введу количество вручную", 
         callback_data="calc_manual"
     ))
     
-    builder.adjust(2, 1)
+    builder.adjust(1, 1)
     
     return builder.as_markup()
 
@@ -44,7 +44,7 @@ def get_female_calculation_method_keyboard() -> InlineKeyboardMarkup:
     #     callback_data="calc_custom_adult"
     # ))
     builder.add(InlineKeyboardButton(
-        text="✋ Ввести вручную", 
+        text="Введу количество вручную", 
         callback_data="calc_manual"
     ))
     

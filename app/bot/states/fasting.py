@@ -13,6 +13,9 @@ class FastingStates(StatesGroup):
     waiting_for_fast_period_start = State()
     waiting_for_fast_period_end = State()
     
+    # Расчет за года
+    waiting_for_fast_year_count = State()
+    
     # Ручной ввод
     waiting_for_manual_days = State()
     

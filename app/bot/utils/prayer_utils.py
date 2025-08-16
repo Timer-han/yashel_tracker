@@ -5,7 +5,7 @@ from ...core.database.models.prayer import Prayer
 def format_prayer_statistics(prayers: List[Prayer]) -> str:
     """Форматирование статистики намазов для отображения"""
     if not prayers:
-        return "У вас пока нет данных о намазах."
+        return "У тебя пока нет данных о намазах."
     
     total_missed = sum(p.total_missed for p in prayers)
     total_completed = sum(p.completed for p in prayers)

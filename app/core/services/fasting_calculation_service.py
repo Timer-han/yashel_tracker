@@ -58,6 +58,26 @@ class FastingCalculationService:
             'details': details,
             'years': years_diff
         }
+        
+    def calculate_fasts_by_years(self, years: int) -> Dict[str, int]:
+        """Расчет постов за заданное количество лет"""
+        if years <= 0:
+            return {'total_days': 0, 'excluded_days': 0, 'fasting_days': 0, 'details': ''}
+        
+        # Количество дней постов в год
+        base_fast_days = years * 30
+        
+        # Для женщин вычитаем дни хайда и нифаса
+        excluded_days = 0
+        details = ""
+        
+        return {
+            'total_days': base_fast_days,
+            'excluded_days': excluded_days,
+            'fasting_days': base_fast_days - excluded_days,
+            'details': details,
+            'years': years
+        }
     
     def _calculate_excluded_fast_days_for_women(self, start_date: date, end_date: date,
                                                 hayd_average_days: float = None,

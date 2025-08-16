@@ -32,7 +32,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
         reply_markup = get_female_calculation_method_keyboard()
     
     await message.answer(
-        "🔢 Выберите способ расчета пропущенных намазов:",
+        "🔢 Выбери способ расчета пропущенных намазов:",
         reply_markup=reply_markup
     )
     await state.set_state(PrayerCalculationStates.choosing_method)
@@ -42,7 +42,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
 #     """Расчет от возраста совершеннолетия"""
 #     await callback.message.edit_text(
 #         "📅 Этот метод рассчитает намазы от совершеннолетия до даты, когда вы начали регулярно совершать намазы.\n\n"
-#         "Введите дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
+#         "Введи дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
 #         "Например: 01.01.2020"
 #     )
 #     await state.set_state(PrayerCalculationStates.waiting_for_prayer_start_date)
@@ -52,7 +52,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
 #     """Обработка даты начала совершения намазов"""
 #     prayer_start_date = parse_date(message.text)
 #     if not prayer_start_date:
-#         await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+#         await message.answer("❌ Неверный формат даты. Используй формат ДД.ММ.ГГГГ")
 #         return
     
 #     # Получаем данные пользователя
@@ -89,7 +89,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
 #             prayer_name = config.PRAYER_TYPES[prayer_type]
 #             result_text += f"• {prayer_name}: {count}\n"
     
-#     result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+#     result_text += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
     
 #     await message.answer(result_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
 #     await state.clear()
@@ -98,7 +98,7 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
 async def calc_between_dates(callback: CallbackQuery, state: FSMContext):
     """Расчет между двумя датами"""
     await callback.message.edit_text(
-        "📅 Введите начальную дату (с какой даты считать) в формате ДД.ММ.ГГГГ:\n"
+        "📅 Введи дату своего совершеннолетия по исламу в формате ДД.ММ.ГГГГ:\n"
         "Например: 01.01.2015"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_start_date)
@@ -108,13 +108,13 @@ async def process_start_date(message: Message, state: FSMContext):
     """Обработка начальной даты"""
     start_date = parse_date(message.text)
     if not start_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+        await message.answer("❌ Неверный формат даты. Используй формат ДД.ММ.ГГГГ")
         return
     
     await state.update_data(start_date=start_date)
     
     await message.answer(
-        "📅 Введите конечную дату (по какую дату считать) в формате ДД.ММ.ГГГГ:\n"
+        "📅 Введи конечную дату (по какую дату считать) в формате ДД.ММ.ГГГГ:\n"
         "Например: 01.06.2020"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_end_date)
@@ -124,7 +124,7 @@ async def process_end_date(message: Message, state: FSMContext):
     """Обработка конечной даты"""
     end_date = parse_date(message.text)
     if not end_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+        await message.answer("❌ Неверный формат даты. Используй формат ДД.ММ.ГГГГ")
         return
     
     data = await state.get_data()
@@ -165,7 +165,7 @@ async def process_end_date(message: Message, state: FSMContext):
             prayer_name = config.PRAYER_TYPES[prayer_type]
             result_text += f"• {prayer_name}: {count}\n"
     
-    result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+    result_text += "\n🤲 Пусть Аллах облегчит восполнение!"
     
     await message.answer(result_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
     await state.clear()
@@ -177,7 +177,7 @@ async def calc_manual(callback: CallbackQuery, state: FSMContext):
     
     await callback.message.edit_text(
         "✋ **Ручной ввод намазов**\n\n"
-        "Выберите тип намаза, для которого хотите указать количество пропущенных.",
+        "Выбери тип намаза, для которого хочешь указать количество:",
         reply_markup=get_prayer_type_selection_keyboard(),
         parse_mode="Markdown"
     )
@@ -195,7 +195,7 @@ async def process_prayer_type_selection(callback: CallbackQuery, state: FSMConte
     
     await callback.message.edit_text(
         f"🕌 **{prayer_name}**\n\n"
-        f"Введите количество пропущенных намазов типа '{prayer_name}':\n\n"
+        f"Введи количество пропущенных намазов '{prayer_name}':\n\n"
         "Например: 50"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_manual_prayer_count)
@@ -209,7 +209,7 @@ async def process_manual_prayer_count(message: Message, state: FSMContext):
             await message.answer("❌ Количество не может быть отрицательным.")
             return
     except ValueError:
-        await message.answer("❌ Пожалуйста, введите число.")
+        await message.answer("❌ Пожалуйста, введи число.")
         return
     
     data = await state.get_data()
@@ -230,7 +230,7 @@ async def process_manual_prayer_count(message: Message, state: FSMContext):
         p_name = config.PRAYER_TYPES[p_type]
         current_text += f"• {p_name}: {p_count}\n"
     
-    current_text += "\nВыберите следующий тип намаза или завершите ввод:"
+    current_text += "\nВыбери следующий тип намаза или заверши ввод:"
     
     await message.answer(
         current_text,
@@ -248,7 +248,7 @@ async def finish_manual_input(callback: CallbackQuery, state: FSMContext):
     # Проверяем, есть ли хотя бы один намаз
     total_prayers = sum(manual_prayers.values())
     if total_prayers == 0:
-        await callback.answer("❌ Введите хотя бы один намаз", show_alert=True)
+        await callback.answer("❌ Введи хотя бы один намаз", show_alert=True)
         return
     
     # Сохраняем результат
@@ -266,7 +266,7 @@ async def finish_manual_input(callback: CallbackQuery, state: FSMContext):
             prayer_name = config.PRAYER_TYPES[prayer_type]
             result_text += f"• {prayer_name}: {count}\n"
     
-    result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+    result_text += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
     
     await callback.message.edit_text(result_text, parse_mode="Markdown")
     await callback.message.answer(
@@ -280,7 +280,7 @@ async def calc_custom_adult_dates(callback: CallbackQuery, state: FSMContext):
     """Расчет с заданием дат совершеннолетия"""
     await callback.message.edit_text(
         "📅 Этот метод позволяет указать точную дату совершеннолетия.\n\n"
-        "Введите дату совершеннолетия (когда стали обязаны совершать намазы) в формате ДД.ММ.ГГГГ:\n"
+        "Введи дату совершеннолетия (когда стали обязаны совершать намазы) в формате ДД.ММ.ГГГГ:\n"
         "Например: 15.03.2005"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_adult_date)
@@ -290,13 +290,13 @@ async def process_adult_date(message: Message, state: FSMContext):
     """Обработка даты совершеннолетия"""
     adult_date = parse_date(message.text)
     if not adult_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+        await message.answer("❌ Неверный формат даты. Используй формат ДД.ММ.ГГГГ")
         return
     
     await state.update_data(adult_date=adult_date)
     
     await message.answer(
-        "📅 Введите дату, когда вы начали регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
+        f"📅 Введи дату, когда начал(а) регулярно совершать 5 намазов в день в формате ДД.ММ.ГГГГ:\n"
         "Например: 01.01.2020"
     )
     await state.set_state(PrayerCalculationStates.waiting_for_prayer_start_from_adult)
@@ -306,7 +306,7 @@ async def process_prayer_start_from_adult(message: Message, state: FSMContext):
     """Обработка даты начала намазов после указания даты совершеннолетия"""
     prayer_start_date = parse_date(message.text)
     if not prayer_start_date:
-        await message.answer("❌ Неверный формат даты. Используйте формат ДД.ММ.ГГГГ")
+        await message.answer("❌ Неверный формат даты. Используй формат ДД.ММ.ГГГГ")
         return
     
     data = await state.get_data()
@@ -347,7 +347,7 @@ async def process_prayer_start_from_adult(message: Message, state: FSMContext):
             prayer_name = config.PRAYER_TYPES[prayer_type]
             result_text += f"• {prayer_name}: {count}\n"
     
-    result_text += "\n🤲 Пусть Аллах облегчит вам восполнение!"
+    result_text += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
     
     await message.answer(result_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
     await state.clear()
