@@ -24,17 +24,17 @@ def get_moderator_menu_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     
     # Обычные функции пользователя
-    builder.add(KeyboardButton(text="📊 Моя статистика"))
-    builder.add(KeyboardButton(text="📿 Посты"))
-    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
+    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
+    builder.add(KeyboardButton(text="📿 Посты"))
+    builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
     # Функции модератора
-    builder.add(KeyboardButton(text="📈 Общая статистика"))
     builder.add(KeyboardButton(text="📢 Рассылка"))
+    builder.add(KeyboardButton(text="📈 Общая статистика"))
     
+    builder.add(KeyboardButton(text="📊 Моя статистика"))
     builder.add(KeyboardButton(text="⚙️ Настройки"))
-    builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
     builder.adjust(2, 2, 2, 2)
     
@@ -45,20 +45,20 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     
     # Обычные функции пользователя
-    builder.add(KeyboardButton(text="📊 Моя статистика"))
-    builder.add(KeyboardButton(text="📿 Посты"))
-    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
     builder.add(KeyboardButton(text="➕ Отметить намазы"))
+    builder.add(KeyboardButton(text="🔢 Расчет намазов"))
+    builder.add(KeyboardButton(text="📿 Посты"))
+    builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
     # Функции модератора
     builder.add(KeyboardButton(text="📈 Общая статистика"))
     builder.add(KeyboardButton(text="📢 Рассылка"))
     
     # Функции администратора
-    builder.add(KeyboardButton(text="👥 Управление админами"))
     
+    builder.add(KeyboardButton(text="👥 Управление админами"))
+    builder.add(KeyboardButton(text="📊 Моя статистика"))
     builder.add(KeyboardButton(text="⚙️ Настройки"))
-    builder.add(KeyboardButton(text="ℹ️ Помощь"))
     
     builder.adjust(2, 2, 2, 3)
     
