@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def escape_markdown(text):
-    special_chars = '\\`*_{}[]()#+-.!|>~^='
-    for char in special_chars:
+def escape_markdown(text, chars ='\\`*_{}[]()#+.-!|>~^='):
+    # special_chars = '\\`*_{}[]()#+.-!|>~^='
+    for char in chars:
         text = text.replace(char, '\\' + char)
     return text
 

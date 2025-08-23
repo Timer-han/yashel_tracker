@@ -4,7 +4,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from ...keyboards.user.main_menu import get_main_menu_keyboard, get_moderator_menu_keyboard, get_admin_menu_keyboard
-from ...keyboards.user.registration import get_gender_keyboard
+from ...keyboards.user.registration import get_gender_keyboard, get_gender_selection_keyboard
 from ....core.services.user_service import UserService
 from ....core.config import config
 from ...states.registration import RegistrationStates
@@ -39,9 +39,9 @@ async def cmd_start(message: Message, state: FSMContext):
             "Ну что, готов двигаться к довольству Всевышнего?\n\n"
 
             "Давай пройдём регистрацию. Укажи пол ⤵️",
-            reply_markup=get_gender_keyboard()
+            reply_markup=get_gender_selection_keyboard()
         )
-        await state.set_state(RegistrationStates.waiting_for_gender)
+        await state.set_state(RegistrationStates.gender_selection)
     else:
         # Показываем соответствующее меню в зависимости от роли
         if user.role == config.Roles.ADMIN:

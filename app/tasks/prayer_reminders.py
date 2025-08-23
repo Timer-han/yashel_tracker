@@ -1,9 +1,10 @@
 import logging
 from aiogram import Bot
 
-from ..core.config import config
+from ..core.config import config, escape_markdown
 from ..core.database.repositories.user_repository import UserRepository
 from ..core.services.prayer_service import PrayerService
+from ..bot.utils.text_messages import text_message
 
 logger = logging.getLogger(__name__)
 
@@ -16,16 +17,10 @@ async def send_evening_reminders():
     try:
         users = await user_repo.get_all_registered_users()
         
-        reminder_messages = [
-            "🕌 Время для восполнения намазов! Каждый восполненный намаз приближает тебя к Аллаху.",
-            "🤲 Вечернее напоминание: не забудь восполнить намазы. Пусть Аллах примет твои молитвы!",
-            "📿 Благословенный вечер! Время восполнить пропущенные намазы и приблизиться к Всевышнему.",
-            "🌅 Каждый день - новая возможность восполнить намазы. Не откладывай на завтра!",
-            "💝 Намаз - подарок верующему от Аллаха. Восполни пропущенные и почувствуй эту близость."
-        ]
+        reminder_messages = text_message.reminder_messages
         
         import random
-        message_text = random.choice(reminder_messages)
+        message_text = escape_markdown(random.choice(reminder_messages), ".?!-()[]")
         
         sent_count = 0
         for user in users:
@@ -35,7 +30,8 @@ async def send_evening_reminders():
                 if stats['total_remaining'] > 0:
                     await bot.send_message(
                         chat_id=user.telegram_id,
-                        text=message_text
+                        text=message_text,
+                        parse_mode="MarkdownV2"
                     )
                     sent_count += 1
                 

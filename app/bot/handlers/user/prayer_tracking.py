@@ -10,7 +10,7 @@ from ...keyboards.user.prayer_tracking import (
     get_compact_prayer_tracking_keyboard
 )
 from ....core.services.prayer_service import PrayerService
-from ....core.config import config
+from ....core.config import config, escape_markdown
 
 
 logger = logging.getLogger(__name__)
@@ -34,8 +34,8 @@ async def show_prayer_tracking(message: Message):
     
     if not prayers_to_show:
         await message.answer(
-            "🎉 Поздравляем! Все твои намазы восполнены!\n"
-            "Ты сделал огромный вклад в Ахират. Пусть Всевышний примет и будет тобой доволен!"
+            "🎉 Поздравляем\! Все твои намазы восполнены\!\n"
+            "Ты сделал огромный вклад в Ахират\. Пусть Всевышний примет и будет тобой доволен\!"
         )
         return
     
@@ -43,7 +43,7 @@ async def show_prayer_tracking(message: Message):
         "➕ *Отметить восполненные намазы*\n\n"
         "Выбери категорию намазов:",
         reply_markup=get_prayer_category_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data.startswith("prayer_inc_"))
@@ -128,7 +128,7 @@ async def send_action_message_and_update_menu(callback_query, prayer_type: str, 
     if prayer_data.total_missed > 0:
         progress = (prayer_data.completed / prayer_data.total_missed) * 100
         progress_bar = "▓" * int(progress / 10) + "░" * (10 - int(progress / 10))
-        progress_text = f"\n📊 [{progress_bar}] {progress:.1f}%"
+        progress_text = escape_markdown(f"\n📊 [{progress_bar}] {progress:.1f}%")
     else:
         progress_text = ""
     
@@ -142,10 +142,10 @@ async def send_action_message_and_update_menu(callback_query, prayer_type: str, 
     
     # Мотивационное сообщение
     if prayer_data.remaining == 0:
-        notification_text += f"\n\n🎉 *Машаа Ллах!* Все {prayer_name} восполнены!"
+        notification_text += f"\n\n🎉 *Машаа Ллах\!* Все {prayer_name} восполнены\!"
     
     # 1. Редактируем текущее сообщение в уведомление
-    await callback_query.message.edit_text(notification_text, parse_mode="Markdown")
+    await callback_query.message.edit_text(notification_text, parse_mode="MarkdownV2")
     
     # 2. Определяем категорию и отправляем новое меню
     prayers = await prayer_service.get_user_prayers(callback_query.from_user.id)
@@ -160,10 +160,10 @@ async def send_action_message_and_update_menu(callback_query, prayer_type: str, 
     
     await callback_query.message.answer(
         f"{category_name}\n\n"
-        "➖ - восполнить намаз (уменьшить оставшиеся)\n"
-        "➕ - добавить пропущенный (увеличить оставшиеся)",
+        "➖ \- восполнить намаз \(уменьшить оставшиеся\)\n"
+        "➕ \- добавить пропущенный \(увеличить оставшиеся\)",
         reply_markup=get_compact_prayer_tracking_keyboard(prayers, category),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 
@@ -193,12 +193,12 @@ async def show_prayer_info(callback: CallbackQuery):
     
     if prayer.total_missed > 0:
         progress = (prayer.completed / prayer.total_missed) * 100
-        info_text += f"📈 Прогресс: {progress:.1f}%"
+        info_text += escape_markdown(f"📈 Прогресс: {progress:.1f}%")
     
     await callback.message.answer(
         info_text,
         reply_markup=get_prayer_adjustment_keyboard(prayer_type, prayer.remaining),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data == "show_stats")
@@ -215,24 +215,24 @@ async def show_stats_from_tracking(callback: CallbackQuery):
     
     if stats['total_completed'] > 0:
         progress = (stats['total_completed'] / stats['total_missed']) * 100
-        stats_text += f"📈 Прогресс: *{progress:.1f}%*"
+        stats_text += escape_markdown(f"📈 Прогресс: {progress:.1f}%")
     
     await callback.answer()
-    await callback.message.answer(stats_text, parse_mode="Markdown")
+    await callback.message.answer(stats_text, parse_mode="MarkdownV2")
 
 @router.callback_query(F.data == "reset_prayers")
 async def confirm_reset_prayers(callback: CallbackQuery):
     """Подтверждение сброса всех намазов"""
     await callback.message.answer(
         "🔄 *Полный сброс данных*\n"
-        "⚠️ *ВНИМАНИЕ!* Это действие:\n"
+        "⚠️ *ВНИМАНИЕ\!* Это действие:\n"
         "• Удалит всю статистику намазов\n"
         "• Сбросит настройки профиля\n"
         "• Потребует повторной регистрации\n\n"
-        "Это действие *НЕОБРАТИМО*!\n"
-        "Ты действительно хочешь продолжить?",
+        "Это действие *НЕОБРАТИМО*\!\n"
+        "Ты действительно хочешь продолжить\?",
         reply_markup=get_reset_confirmation_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data == "confirm_reset")
@@ -242,8 +242,9 @@ async def reset_prayers_confirmed(callback: CallbackQuery):
     
     if success:
         await callback.message.edit_text(
-            "✅ Статистика успешно сброшена.\n\n"
-            "Воспользуйся функцией '🔢 Расчет намазов' для настройки новых данных."
+            "✅ Статистика успешно сброшена\.\n\n"
+            "Воспользуйся функцией '🔢 Расчет намазов' для настройки новых данных\.",
+            parse_mode='MarkdownV2'
         )
     else:
         await callback.message.edit_text("❌ Ошибка при сбросе данных.")
@@ -341,7 +342,7 @@ async def fast_adjust_prayer(callback: CallbackQuery):
         await callback.message.edit_text(
             result_text,
             reply_markup=get_prayer_adjustment_keyboard(prayer_type, updated_prayer.remaining),
-            parse_mode="Markdown"
+            parse_mode="MarkdownV2"
         )
         
         await callback.answer()
@@ -356,7 +357,7 @@ async def finish_adjustment(callback: CallbackQuery):
         "➕ *Отметить восполненные намазы*\n\n"
         "Выбери категорию намазов:",
         reply_markup=get_prayer_category_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data == "category_regular")
@@ -378,10 +379,10 @@ async def show_regular_prayers(callback: CallbackQuery):
     
     await callback.message.edit_text(
         "🕌 *Обычные намазы*\n\n"
-        "➖ - восполнить намаз (уменьшить оставшиеся)\n"
-        "➕ - добавить пропущенный (увеличить оставшиеся)",
+        "➖ \- восполнить намаз \(уменьшить оставшиеся\)\n"
+        "➕ \- добавить пропущенный \(увеличить оставшиеся\)",
         reply_markup=get_compact_prayer_tracking_keyboard(prayers, "regular"),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data == "category_safar")
@@ -402,10 +403,10 @@ async def show_safar_prayers(callback: CallbackQuery):
     
     await callback.message.edit_text(
         "✈️ *Сафар намазы*\n\n"
-        "➖ - восполнить намаз (уменьшить оставшиеся)\n"
-        "➕ - добавить пропущенный (увеличить оставшиеся)",
+        "➖ \- восполнить намаз \(уменьшить оставшиеся\)\n"
+        "➕ \- добавить пропущенный \(увеличить оставшиеся\)",
         reply_markup=get_compact_prayer_tracking_keyboard(prayers, "safar"),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data == "switch_to_safar")
@@ -425,5 +426,5 @@ async def back_to_categories(callback: CallbackQuery):
         "➕ *Отметить восполненные намазы*\n\n"
         "Выбери категорию намазов:",
         reply_markup=get_prayer_category_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )

@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import Command
 from datetime import datetime, date
 
@@ -14,12 +14,14 @@ prayer_service = PrayerService()
 user_service = UserService()
 calc_service = CalculationService()
 
-@router.message(F.text == "📊 Моя статистика")
-@router.message(Command("stats"))
-async def show_user_statistics(message: Message):
-    """Показ статистики пользователя"""
-    stats = await prayer_service.get_user_statistics(message.from_user.id)
-    user = await user_service.get_or_create_user(message.from_user.id)
+# =======
+#  UTILS
+# =======
+
+async def _generate_statistics_text(user_id: int) -> tuple[str, InlineKeyboardMarkup]:
+    """Генерация текста статистики для пользователя"""
+    stats = await prayer_service.get_user_statistics(user_id)
+    user = await user_service.get_or_create_user(user_id)
     
     # Получаем данные о постах
     fasting_missed = user.fasting_missed_days or 0
@@ -33,12 +35,12 @@ async def show_user_statistics(message: Message):
             "📭 Данных пока нет\n\n"
             "• 🔢 Расчет намазов\n"
             "• 📿 Управление постами",
-            parse_mode="Markdown"
+            parse_mode="MarkdownV2"
         )
         return
     
     # Формируем краткую статистику
-    stats_text = "📊 *Ваша статистика*\n\n"
+    stats_text = "📊 *Твоя статистика*\n\n"
     
     # Намазы
     if stats['total_missed'] > 0:
@@ -83,11 +85,17 @@ async def show_user_statistics(message: Message):
     # Добавляем мотивационную фразу
     stats_text += "🤲 *Да поможет Аллах в восполнении!*"
     
-    await message.answer(
-        stats_text,
-        parse_mode="Markdown",
-        reply_markup=get_statistics_keyboard()
-    )
+    stats_text = escape_markdown(stats_text, ".!?()-[]")
+    return stats_text, get_statistics_keyboard()
+
+
+@router.message(F.text == "📊 Моя статистика")
+@router.message(Command("stats"))
+async def show_user_statistics(message: Message):
+    """Показ статистики пользователя"""
+    text, keyboard = await _generate_statistics_text(message.from_user.id)
+    await message.answer(text, parse_mode="MarkdownV2", reply_markup=keyboard)
+
 
 @router.callback_query(F.data == "show_history")
 async def show_prayer_history(callback: CallbackQuery):
@@ -117,8 +125,8 @@ async def show_prayer_history(callback: CallbackQuery):
             f"{action_emoji} {prayer_name} "
             f"({record.previous_value} → {record.new_value})\n"
         )
-    
-    await callback.message.answer(history_text, parse_mode="Markdown")
+    history_text = escape_markdown(history_text, "().!?-[]")
+    await callback.message.answer(history_text, parse_mode="MarkdownV2")
 
 @router.callback_query(F.data == "detailed_breakdown")
 async def show_detailed_breakdown(callback: CallbackQuery):
@@ -175,10 +183,24 @@ async def show_detailed_breakdown(callback: CallbackQuery):
         #     if user.childbirth_count > 0:
         #         breakdown_text += f"• Учтено родов: {user.childbirth_count}\n"
     
-    await callback.message.answer(breakdown_text, parse_mode="Markdown")
+    breakdown_text = escape_markdown(breakdown_text, "().?![]-")
+    await callback.message.answer(breakdown_text, parse_mode="MarkdownV2")
 
 @router.callback_query(F.data == "refresh_stats")
 async def refresh_statistics(callback: CallbackQuery):
     """Обновление статистики"""
-    await show_user_statistics(callback.message)
-    await callback.answer("🔄 Статистика обновлена")
+    try:
+        text, keyboard = await _generate_statistics_text(callback.from_user.id)
+        await callback.message.edit_text(
+            text, 
+            parse_mode="MarkdownV2", 
+            reply_markup=keyboard
+        )
+        await callback.answer("🔄 Статистика обновлена")
+    except Exception as e:
+        if "message is not modified" in str(e):
+            await callback.answer("📊 Данные уже актуальны", show_alert=False)
+        else:
+            # Логируем другие ошибки
+            print(f"Ошибка при обновлении статистики: {e}")
+            await callback.answer("❌ Ошибка при обновлении", show_alert=True)

@@ -68,4 +68,4 @@ async def show_global_statistics(message: Message):
             if prayer_stat['total_missed'] > 0:
                 stats_text += f"• {prayer_name}: {prayer_stat['total_remaining']:,} осталось\n"
     
-    await message.answer(stats_text, parse_mode="Markdown")
+    await message.answer(stats_text, parse_mode="MarkdownV2")

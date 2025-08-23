@@ -27,7 +27,7 @@ async def start_broadcast(message: Message, state: FSMContext):
         "📢 *Создание рассылки*\n\n"
         "Выберите фильтры для целевой аудитории:",
         reply_markup=get_broadcast_filters_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
     await state.set_state(ModeratorStates.broadcast_filters)
 
@@ -131,7 +131,7 @@ async def _show_message_input(callback: CallbackQuery, filters: dict):
     
     filter_text += "\n📝 Теперь введите текст сообщения для рассылки:"
     
-    await callback.message.edit_text(filter_text, parse_mode="Markdown")
+    await callback.message.edit_text(filter_text, parse_mode="MarkdownV2")
 
 @router.message(ModeratorStates.broadcast_message)
 async def process_broadcast_message(message: Message, state: FSMContext):
@@ -145,7 +145,7 @@ async def process_broadcast_message(message: Message, state: FSMContext):
         await state.update_data(filters=filters, waiting_for=None)
         await message.answer(
             _get_filter_text(filters),
-            parse_mode="Markdown"
+            parse_mode="MarkdownV2"
         )
         # await _show_message_input(, filters)
         await state.set_state(ModeratorStates.broadcast_message)
@@ -183,7 +183,7 @@ async def process_broadcast_message(message: Message, state: FSMContext):
     await message.answer(
         preview_text,
         reply_markup=get_broadcast_confirmation_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
     await state.set_state(ModeratorStates.broadcast_confirmation)
 
@@ -209,7 +209,7 @@ async def confirm_broadcast(callback: CallbackQuery, state: FSMContext):
             f"• Всего пользователей: {result['total_users']}"
         )
         
-        await callback.message.edit_text(result_text, parse_mode="Markdown")
+        await callback.message.edit_text(result_text, parse_mode="MarkdownV2")
         
     except Exception as e:
         await callback.message.edit_text(
@@ -232,6 +232,6 @@ async def back_to_filters(callback: CallbackQuery, state: FSMContext):
         "📢 *Создание рассылки*\n\n"
         "Выберите фильтры для целевой аудитории:",
         reply_markup=get_broadcast_filters_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
     await state.set_state(ModeratorStates.broadcast_filters)

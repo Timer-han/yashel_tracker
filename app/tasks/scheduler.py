@@ -4,8 +4,8 @@ from apscheduler.triggers.cron import CronTrigger
 import logging
 
 from ..core.config import config
-from .daily_notifications import send_daily_reminders
-from .prayer_reminders import send_evening_reminders
+from .daily_notifications import send_daily_reminders, send_evening_reminders
+# from .prayer_reminders import send_evening_reminders, send_daily_reminders
 
 logger = logging.getLogger(__name__)
 
@@ -17,14 +17,14 @@ def start_scheduler():
     # Ежедневные напоминания в указанное время
     scheduler.add_job(
         send_evening_reminders,
-        CronTrigger(hour=config.DAILY_REMINDER_HOUR, minute=0),
+        CronTrigger(hour=config.DAILY_REMINDER_HOUR, minute=56,second=10),
         id='evening_reminders'
     )
     
     # Дополнительная задача для отправки ежедневной статистики
     scheduler.add_job(
         send_daily_reminders,
-        CronTrigger(hour=19, minute=0),  # 22:00 ежедневно
+        CronTrigger(hour=19, minute=0, second=0),  # 22:00 ежедневно
         id='daily_statistics'
     )
     

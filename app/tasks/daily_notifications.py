@@ -2,9 +2,10 @@ import logging
 from aiogram import Bot
 from typing import List
 
-from ..core.config import config
+from ..core.config import config, escape_markdown
 from ..core.database.repositories.user_repository import UserRepository
 from ..core.services.prayer_service import PrayerService
+from ..bot.utils.text_messages import text_message
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +28,19 @@ async def send_daily_reminders():
                 
                 # Отправляем напоминание только если есть что восполнять
                 if stats['total_remaining'] > 0:
-                    message_text = (
-                        f"🌙 Доброй ночи, {user.display_name}!\n\n"
+                    message_text = escape_markdown(
+                        f"🌙 Доброй ночи, {escape_markdown(user.display_name)}!\n\n"
                         f"📊 Твоя статистика на сегодня:\n"
                         f"⏳ Осталось восполнить: *{stats['total_remaining']}* намазов\n\n"
                         "🤲 Не забывай о восполнении намазов каждый день.\n"
-                        "Пусть Аллах облегчит этот путь!\n\n"
-                        # "💡 _Отключить уведомления можно в настройках бота_"
+                        "Пусть Аллах облегчит этот путь!\n\n",
+                        ".!?()-"
                     )
                     
                     await bot.send_message(
                         chat_id=user.telegram_id,
                         text=message_text,
-                        parse_mode="Markdown"
+                        parse_mode="MarkdownV2"
                     )
                     sent_count += 1
                 
@@ -65,16 +66,10 @@ async def send_evening_reminders():
         # Получаем только пользователей с включенными уведомлениями
         users = await user_repo.get_users_with_notifications_enabled()
         
-        reminder_messages = [
-            "🕌 Время для восполнения намазов! Каждый восполненный намаз приближает тебя к Аллаху.",
-            "🤲 Вечернее напоминание: не забудь восполнить намазы. Пусть Аллах примет молитвы!",
-            "📿 Благословенный вечер! Время восполнить пропущенные намазы и приблизиться к Всевышнему.",
-            "🌅 Каждый день - новая возможность восполнить намазы. Не откладывай на завтра!",
-            "💝 Намаз - подарок верующему от Аллаха. Восполните пропущенные и почувствуйте эту близость."
-        ]
+        reminder_messages = text_message.reminder_messages
         
         import random
-        message_text = random.choice(reminder_messages)
+        message_text = escape_markdown(random.choice(reminder_messages), ".?!-()[]")
         
         sent_count = 0
         for user in users:
@@ -84,7 +79,8 @@ async def send_evening_reminders():
                 if stats['total_remaining'] > 0:
                     await bot.send_message(
                         chat_id=user.telegram_id,
-                        text=message_text
+                        text=message_text,
+                        parse_mode="MarkdownV2"
                     )
                     sent_count += 1
                 

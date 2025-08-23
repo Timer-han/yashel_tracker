@@ -39,20 +39,20 @@ class BroadcastService:
                             chat_id=user.telegram_id,
                             photo=photo,
                             caption=message_text,
-                            parse_mode="Markdown"
+                            parse_mode="MarkdownV2"
                         )
                     elif video:
                         await bot.send_video(
                             chat_id=user.telegram_id,
                             video=video,
                             caption=message_text,
-                            parse_mode="Markdown"
+                            parse_mode="MarkdownV2"
                         )
                     else:
                         await bot.send_message(
                             chat_id=user.telegram_id,
                             text=message_text,
-                            parse_mode="Markdown"
+                            parse_mode="MarkdownV2"
                         )
                     
                     sent_count += 1

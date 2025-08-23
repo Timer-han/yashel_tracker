@@ -30,7 +30,7 @@ async def show_admin_management(message: Message, state: FSMContext):
         "👥 *Управление администраторами*\n\n"
         "Выберите действие:",
         reply_markup=get_admin_management_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 @router.callback_query(F.data == "add_moderator")
@@ -82,7 +82,7 @@ async def process_admin_id(message: Message, state: FSMContext):
             f"Роль: *{role_text.capitalize()}*\n\n"
             f"❓ Назначить этого пользователя {role_text}?",
             reply_markup=get_admin_confirmation_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="MarkdownV2"
         )
         await state.set_state(AdminStates.confirmation)
         
@@ -144,7 +144,7 @@ async def list_admins(callback: CallbackQuery):
         for moderator in moderator_list:
             admins_text += f"• ID: `{moderator.telegram_id}`\n"
     
-    await callback.message.edit_text(admins_text, parse_mode="Markdown")
+    await callback.message.edit_text(admins_text, parse_mode="MarkdownV2")
 
 @router.callback_query(F.data == "remove_admin")
 async def remove_admin_start(callback: CallbackQuery, state: FSMContext):
@@ -183,7 +183,7 @@ async def process_remove_admin_id(message: Message, state: FSMContext):
             f"Текущая роль: *{role_text.capitalize()}*\n\n"
             f"❓ Лишить этого пользователя прав {role_text}?",
             reply_markup=get_admin_confirmation_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="MarkdownV2"
         )
         await state.set_state(AdminStates.confirmation)
         
@@ -226,5 +226,5 @@ async def back_to_admin_menu(callback: CallbackQuery):
         "👥 *Управление администраторами*\n\n"
         "Выберите действие:",
         reply_markup=get_admin_management_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )

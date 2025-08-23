@@ -1,17 +1,19 @@
 from aiogram.fsm.state import State, StatesGroup
 
 class RegistrationStates(StatesGroup):
-    """Состояния регистрации"""
-    waiting_for_gender = State()
-    waiting_for_birth_date = State()
-    waiting_for_city = State()
+    """Состояния регистрации пользователя"""
     
-    # Состояния для женщин
-    waiting_for_hayd_average = State()  # Текущая продолжительность хайда
-    waiting_for_childbirth_count = State()
-    waiting_for_childbirth_date = State()
-    waiting_for_nifas_days = State()
-    waiting_for_hayd_before_birth = State()  # Хайд ДО конкретных родов
-    # Убрали waiting_for_hayd_after_birth - больше не нужно
+    # Основные данные
+    gender_selection = State()          # Выбор пола
+    birth_date_input = State()          # Ввод даты рождения  
+    city_input = State()                # Ввод города
     
-    confirmation = State()
+    # Женские циклы (только для женщин)
+    hayd_duration_input = State()       # Текущая продолжительность хайда
+    childbirth_count_input = State()    # Количество родов
+    pre_birth_hayd_input = State()      # Продолжительность хайда ДО конкретных родов
+    childbirth_date_input = State()     # Дата конкретных родов
+    nifas_duration_input = State()      # Продолжительность нифаса после родов
+    
+    # Финализация
+    data_confirmation = State()         # Подтверждение введенных данных

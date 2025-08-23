@@ -200,4 +200,4 @@ class UserRepository:
     
     async def get_users_with_notifications_enabled(self) -> List[User]:
         """Получение пользователей с включенными уведомлениями"""
-        return await self.get_users_by_filters(exclude_disabled_notifications=True)
+        return await self.get_users_by_filters(exclude_disabled_notifications=False)

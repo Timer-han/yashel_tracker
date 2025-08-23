@@ -1,5 +1,5 @@
 from typing import Dict, List
-from ...core.config import config
+from ...core.config import config, escape_markdown
 from ...core.database.models.prayer import Prayer
 
 def format_prayer_statistics(prayers: List[Prayer]) -> str:
@@ -19,7 +19,7 @@ def format_prayer_statistics(prayers: List[Prayer]) -> str:
     
     if total_completed > 0 and total_missed > 0:
         progress = (total_completed / total_missed) * 100
-        stats_text += f"📈 Прогресс: *{progress:.1f}%*\n\n"
+        stats_text += f"📈 Прогресс: {progress:.1f}%\n\n"
     
     stats_text += "*Детализация по намазам:*\n"
     
