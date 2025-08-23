@@ -3,6 +3,7 @@ from aiogram.types import Message
 
 from ....core.services.statistics_service import StatisticsService
 from ...filters.role_filter import moderator_filter
+from ....core.config import escape_markdown
 
 router = Router()
 router.message.filter(moderator_filter)
@@ -68,4 +69,5 @@ async def show_global_statistics(message: Message):
             if prayer_stat['total_missed'] > 0:
                 stats_text += f"• {prayer_name}: {prayer_stat['total_remaining']:,} осталось\n"
     
+    stats_text = escape_markdown(stats_text, "-.!?[]()")
     await message.answer(stats_text, parse_mode="MarkdownV2")
