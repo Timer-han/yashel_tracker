@@ -30,14 +30,13 @@ async def _generate_statistics_text(user_id: int) -> tuple[str, InlineKeyboardMa
     
     # Если нет данных ни о намазах, ни о постах
     if stats['total_missed'] == 0 and fasting_missed == 0:
-        await message.answer(
+        return (
             "📊 *Твоя статистика:*\n\n"
             "📭 Данных пока нет\n\n"
             "• 🔢 Расчет намазов\n"
             "• 📿 Управление постами",
-            parse_mode="MarkdownV2"
+            None
         )
-        return
     
     # Формируем краткую статистику
     stats_text = "📊 *Твоя статистика*\n\n"
