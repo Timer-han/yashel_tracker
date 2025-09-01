@@ -1,6 +1,7 @@
 import logging
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
 
 from ...keyboards.user.prayer_tracking import (
     get_prayer_tracking_keyboard, 
@@ -11,7 +12,7 @@ from ...keyboards.user.prayer_tracking import (
 )
 from ....core.services.prayer_service import PrayerService
 from ....core.config import config, escape_markdown
-
+from ...states.prayer_tracking import PrayerTrackingStates
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -418,6 +419,101 @@ async def switch_to_safar(callback: CallbackQuery):
 async def switch_to_regular(callback: CallbackQuery):
     """Переключение на обычные намазы"""
     await show_regular_prayers(callback)
+    
+@router.callback_query(F.data.startswith("manual_input_"))
+async def start_manual_input(callback: CallbackQuery, state: FSMContext):
+    """Начало ручного ввода количества"""
+    prayer_type = callback.data.split("_", 2)[2]  # manual_input_fajr -> fajr
+    prayer_name = config.PRAYER_TYPES[prayer_type]
+    
+    await state.update_data(editing_prayer_type=prayer_type)
+    
+    await callback.message.edit_text(
+        f"✏️ **Ручной ввод - {prayer_name}**\n\n"
+        f"Введи новое количество восполненных намазов:\n\n"
+        f"Например: 25",
+        parse_mode="MarkdownV2"
+    )
+    
+    await state.set_state(PrayerTrackingStates.manual_input)
+
+@router.message(PrayerTrackingStates.manual_input)
+async def process_manual_input(message: Message, state: FSMContext):
+    """Обработка ручного ввода количества"""
+    data = await state.get_data()
+    prayer_type = data['editing_prayer_type']
+    
+    new_count, error = validate_number_input(message.text, min_val=0, integer_only=True)
+    if error:
+        await message.answer(error, parse_mode="MarkdownV2")
+        return
+    
+    # Получаем текущие данные намаза
+    prayer = await prayer_service.prayer_repo.get_prayer(message.from_user.id, prayer_type)
+    if not prayer:
+        await message.answer("❌ Данные о намазе не найдены", parse_mode="MarkdownV2")
+        await state.clear()
+        return
+    
+    # Проверяем, что новое количество не превышает общее количество пропущенных
+    if new_count > prayer.total_missed:
+        await message.answer(
+            f"❌ Нельзя восполнить больше намазов чем было пропущено\.\n"
+            f"Всего пропущено: {prayer.total_missed}\n"
+            f"Введите число от 0 до {prayer.total_missed}",
+            parse_mode="MarkdownV2"
+        )
+        return
+    
+    # Вычисляем разницу и обновляем
+    difference = new_count - prayer.completed
+    
+    if difference != 0:
+        # Обновляем количество напрямую через репозиторий
+        success = await prayer_service.prayer_repo.create_or_update_prayer(
+            message.from_user.id, prayer_type, prayer.total_missed, new_count
+        )
+        
+        if success:
+            updated_prayer = await prayer_service.prayer_repo.get_prayer(message.from_user.id, prayer_type)
+            prayer_name = config.PRAYER_TYPES[prayer_type]
+            
+            result_text = (
+                f"✅ **{prayer_name}**\n\n"
+                f"📝 Всего пропущено: *{updated_prayer.total_missed}*\n"
+                f"✅ Восполнено: *{updated_prayer.completed}*\n"
+                f"⏳ Осталось: *{updated_prayer.remaining}*"
+            )
+            
+            await message.answer(
+                result_text,
+                reply_markup=get_prayer_adjustment_keyboard(prayer_type, updated_prayer.remaining),
+                parse_mode="MarkdownV2"
+            )
+        else:
+            await message.answer("❌ Ошибка при обновлении данных", parse_mode="MarkdownV2")
+    else:
+        await message.answer("Количество не изменилось", parse_mode="MarkdownV2")
+    
+    await state.clear()
+
+def validate_number_input(text: str, min_val: float = None, max_val: float = None, integer_only: bool = False) -> tuple[float, str]:
+    """Валидация числового ввода"""
+    try:
+        if integer_only:
+            value = int(text)
+        else:
+            value = float(text)
+    except ValueError:
+        return None, "❌ Введи корректное число\."
+    
+    if min_val is not None and value < min_val:
+        return None, f"❌ Значение должно быть не менее {min_val}\."
+    
+    if max_val is not None and value > max_val:
+        return None, f"❌ Значение должно быть не более {max_val}\."
+    
+    return value, ""
 
 @router.callback_query(F.data == "back_to_categories")
 async def back_to_categories(callback: CallbackQuery):

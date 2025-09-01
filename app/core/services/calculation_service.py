@@ -68,15 +68,20 @@ class CalculationService:
         
         # Общее количество дней в периоде
         total_period_days = (calculation_end_date - maturity_date).days
+        logger.error(f"total_period_days = {total_period_days}")
         
         # Вычисляем исключенные дни
         excluded_days = self._calculate_excluded_days_detailed(
             maturity_date, calculation_end_date, regular_cycle, hayd_data, 
             births_data or [], miscarriages_data or []
         )
+        logger.error(f"excluded_days = {excluded_days}")
         
         # Количество дней для намазов
         prayer_days = max(0, total_period_days - excluded_days) + post_menopause_days
+        
+        # Надбавка 1%. Лучше восполнить больше, чем оставить долги.
+        prayer_days = int (prayer_days * 1.01)
         
         return {
             'fajr': prayer_days,
@@ -99,6 +104,9 @@ class CalculationService:
         if hayd_data.get('use_total', False):
             total_nifas_days = self._calculate_total_nifas_days(start_date, end_date, births_data, miscarriages_data)
             total_hayd_days = hayd_data.get('total_hayd_days', 0)
+            logger.error(f"total_nifas_days = {total_nifas_days}")
+            logger.error(f"total_hayd_days = {total_hayd_days}")
+            
             return min(total_nifas_days + total_hayd_days, (end_date - start_date).days)
         
         # Объединяем и сортируем все события (роды и выкидыши)
@@ -127,10 +135,13 @@ class CalculationService:
         
         # Сортируем события по дате
         all_events.sort(key=lambda x: x['date'])
+        logger.error(f"all_events = {all_events}")
+        logger.error(f"hayd_data = {hayd_data}")
         
         # Создаем периоды для расчета
         periods = self._create_calculation_periods(start_date, end_date, all_events, hayd_data)
-        
+        logger.error(f"periods = {periods}")
+
         total_excluded_days = 0
         
         # Считаем исключенные дни для каждого периода
@@ -140,6 +151,7 @@ class CalculationService:
             
             # Считаем дни хайда в периоде
             hayd_days = self._calculate_hayd_in_period(period, regular_cycle)
+            logger.error(f"hayd_days = {hayd_days}")
             total_excluded_days += hayd_days
         
         return min(total_excluded_days, (end_date - start_date).days)
@@ -220,14 +232,14 @@ class CalculationService:
                 'type': 'regular_period'
             })
         
-        # Если событий не было вообще
-        if not events:
-            periods.append({
-                'start': start_date,
-                'end': end_date,
-                'hayd_days_per_month': hayd_data.get('average_hayd', 5),
-                'type': 'regular_period'
-            })
+        # # Если событий не было вообще
+        # if not events:
+        #     periods.append({
+        #         'start': start_date,
+        #         'end': end_date,
+        #         'hayd_days_per_month': hayd_data.get('average_hayd', 5),
+        #         'type': 'regular_period'
+        #     })
         
         return periods
     
@@ -289,6 +301,8 @@ class CalculationService:
             if count > 0:
                 prayer_name = config.PRAYER_TYPES[prayer_type]
                 summary += f"🕌 {prayer_name}: {count}\n"
+                
+        summary += "\nМы добавили \+1% к пропущенным намазам, ведь лучше восполнить больше, чем оставить долги!\n"
         
         summary += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
         

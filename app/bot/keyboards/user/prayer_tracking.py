@@ -105,9 +105,11 @@ def get_prayer_adjustment_keyboard(prayer_type: str, current_remaining: int) -> 
         InlineKeyboardButton(text="+1", callback_data=f"fast_adjust_{prayer_type}_1")
     )
     
+    # НОВАЯ КНОПКА для ручного ввода
+    builder.add(InlineKeyboardButton(text="✏️ Ввести вручную", callback_data=f"manual_input_{prayer_type}"))
     builder.add(InlineKeyboardButton(text="✅ Готово", callback_data="adjustment_done"))
     
-    builder.adjust(3, 3, 1)
+    builder.adjust(3, 3, 2)  # Изменил последнюю строку
     
     return builder.as_markup()
 

@@ -14,7 +14,8 @@ from ...keyboards.user.prayer_calc import (
     get_miscarriages_count_keyboard,
     get_hayd_duration_keyboard,
     get_nifas_duration_keyboard,
-    get_calculation_confirmation_keyboard
+    get_calculation_confirmation_keyboard,
+    get_individual_prayer_input_keyboard
 )
 from ....core.services.calculation_service import CalculationService
 from ....core.services.prayer_service import PrayerService
@@ -50,11 +51,12 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
     else:  # female
         await message.answer(
             "🔢 **Расчет пропущенных намазов**\n\n"
-            "Давай приступим\! Для женщин в расчете пропущенных намазов и постов есть"
-            "важные индивидуальные нюансы, чтобы быть абсолютно уверенной в"
-            "правильности подсчета, после использования нашего трекера советуем"
-            "обратиться к специалисту для наиболее точного учета твоих индивидуальных"
-            "особенностей\.\n\n"
+            "Давай приступим\! Для женщин в расчете пропущенных намазов и постов есть "
+            "важные индивидуальные нюансы, чтобы быть абсолютно уверенной в "
+            "правильности подсчета, после использования нашего трекера советуем "
+            "обратиться к специалисту для наиболее точного учета твоих индивидуальных "
+            "особенностей\. Мы не несём ответственности за расчёт количества пропущенных "
+            "намазов, их реальное число может отличаться от того, сколько посчитает бот\.\n\n"
             "Выбери способ расчета:",
             reply_markup=get_female_calculation_method_keyboard(),
             parse_mode="MarkdownV2"
@@ -328,10 +330,10 @@ async def female_detailed_guide(callback: CallbackQuery, state: FSMContext):
 • Между месячными должно пройти минимум 15 дней (360 ч)
 
 🔬 **Как считаем:**
-1. Берем весь период от совершеннолетия до начала чтения 6 намазов
+1. Берем весь период от совершеннолетия до начала чтения 6 намазов (или до менопаузы, если она была раньше)
 2. Вычитаем все дни нифаса, которые попали в этот период
-3. Вычитаем дни хайда (рассчитываем по периодам между событиями)
-4. Если была менопауза - прибавляем дни от менопаузы до начала намазов
+3. Вычитаем общее число дней хайда (рассчитываем по периодам между событиями)
+4. Если была менопауза - прибавляем все пропущенные дни от менопаузы до начала намазов
 5. Получаем итоговое количество дней = количество каждого вида намазов
 
 📚 **Рекомендуем изучить самостоятельно темы "хайд", "нифас" и "истихада" для более точного расчета.**
@@ -1107,6 +1109,125 @@ async def perform_female_calculation(message: Message, state: FSMContext, prayer
             parse_mode="MarkdownV2"
         )
     
+    await state.clear()
+
+# ======================================
+# ОБРАБОТЧИКИ РУЧНОГО ВВОДА НАМАЗОВ
+# ======================================
+
+# Обработчик для выбора индивидуального ввода
+@router.callback_query(PrayerCalculationStates.choosing_method, F.data == "manual_individual")
+async def start_individual_input(callback: CallbackQuery, state: FSMContext):
+    """Начало индивидуального ввода намазов"""
+    await state.update_data(individual_prayers={})
+    
+    await callback.message.edit_text(
+        "✏️ **Индивидуальный ввод намазов**\n\n"
+        "Выбери намаз для ввода количества:\n\n"
+        "💡 Будут обновлены только те намазы, которые ты введешь\.",
+        reply_markup=get_individual_prayer_input_keyboard(entered_prayers={}),
+        parse_mode="MarkdownV2"
+    )
+    await state.set_state(PrayerCalculationStates.manual_input_individual)
+
+@router.callback_query(PrayerCalculationStates.manual_input_individual, F.data.startswith("input_individual_"))
+async def select_prayer_for_input(callback: CallbackQuery, state: FSMContext):
+    """Выбор намаза для ввода"""
+    prayer_type = callback.data.split("_", 2)[2]  # input_individual_fajr -> fajr
+    prayer_name = config.PRAYER_TYPES[prayer_type]
+    
+    await callback.message.edit_text(
+        f"🕌 **{prayer_name}**\n\n"
+        f"Введи количество пропущенных намазов:\n\n"
+        f"Например: 150",
+        parse_mode="MarkdownV2"
+    )
+    
+    await state.update_data(current_prayer_type=prayer_type)
+    await state.set_state(getattr(PrayerCalculationStates, f"manual_input_{prayer_type}"))
+
+# Обработчики для каждого типа намаза
+@router.message(PrayerCalculationStates.manual_input_fajr)
+@router.message(PrayerCalculationStates.manual_input_zuhr)
+@router.message(PrayerCalculationStates.manual_input_asr)
+@router.message(PrayerCalculationStates.manual_input_maghrib)
+@router.message(PrayerCalculationStates.manual_input_isha)
+@router.message(PrayerCalculationStates.manual_input_witr)
+@router.message(PrayerCalculationStates.manual_input_zuhr_safar)
+@router.message(PrayerCalculationStates.manual_input_asr_safar)
+@router.message(PrayerCalculationStates.manual_input_isha_safar)
+async def process_individual_prayer_input(message: Message, state: FSMContext):
+    """Обработка ввода количества для конкретного намаза"""
+    data = await state.get_data()
+    prayer_type = data['current_prayer_type']
+    
+    count, error = validate_number_input(message.text, min_val=0, integer_only=True)
+    if error:
+        await message.answer(error, parse_mode="MarkdownV2")
+        return
+    
+    # Сохраняем количество
+    individual_prayers = data.get('individual_prayers', {})
+    individual_prayers[prayer_type] = int(count)
+    await state.update_data(individual_prayers=individual_prayers)
+    
+    prayer_name = config.PRAYER_TYPES[prayer_type]
+    await message.answer(
+        f"✅ {prayer_name}: {int(count)} намазов сохранено\n\n"
+        f"Выбери следующий намаз или заверши ввод:",
+        reply_markup=get_individual_prayer_input_keyboard(prayer_type, individual_prayers),
+        parse_mode="MarkdownV2"
+    )
+    await state.set_state(PrayerCalculationStates.manual_input_individual)
+
+@router.callback_query(PrayerCalculationStates.manual_input_individual, F.data == "finish_individual_input")
+async def finish_individual_input(callback: CallbackQuery, state: FSMContext):
+    """Завершение индивидуального ввода"""
+    data = await state.get_data()
+    individual_prayers = data.get('individual_prayers', {})
+    
+    if not individual_prayers:
+        await callback.message.edit_text(
+            "❌ Ни один намаз не был введен\.\n"
+            "Попробуй еще раз или используй другой метод расчета\.",
+            parse_mode="MarkdownV2"
+        )
+        await state.clear()
+        return
+    
+    # Обновляем только введенные намазы
+    await prayer_service.update_specific_prayers(callback.from_user.id, individual_prayers)
+    
+    # Получаем все намазы для отображения результата
+    all_prayers = await prayer_service.get_user_prayers(callback.from_user.id)
+    prayers_dict = {p.prayer_type: p.total_missed for p in all_prayers}
+    
+    # Формируем текст результата только для введенных намазов
+    result_text = "📊 **Результат ввода:**\n\n"
+    
+    total_entered = sum(individual_prayers.values())
+    result_text += f"📝 **Введено намазов: {total_entered}**\n\n"
+    
+    result_text += "**Обновленные намазы:**\n"
+    for prayer_type, count in individual_prayers.items():
+        prayer_name = config.PRAYER_TYPES[prayer_type]
+        result_text += f"🕌 {prayer_name}: {count}\n"
+    
+    # Показываем информацию о существующих намазах
+    existing_prayers = [p for p in all_prayers if p.prayer_type not in individual_prayers and p.total_missed > 0]
+    if existing_prayers:
+        result_text += "\n**Существующие намазы (без изменений):**\n"
+        for prayer in existing_prayers:
+            prayer_name = config.PRAYER_TYPES[prayer.prayer_type]
+            result_text += f"🕌 {prayer_name}: {prayer.total_missed}\n"
+    
+    result_text += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
+    
+    await callback.message.edit_text(
+        escape_markdown(result_text, "()-?.!_="),
+        parse_mode="MarkdownV2"
+    )
+    await callback.message.answer("Возвращаемся в главное меню:", reply_markup=get_main_menu_keyboard())
     await state.clear()
 
 # ======================================

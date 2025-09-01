@@ -1,5 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from ....core.config import config
 
 def get_male_calculation_method_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура методов расчета для мужчин"""
@@ -12,6 +13,10 @@ def get_male_calculation_method_keyboard() -> InlineKeyboardMarkup:
     builder.add(InlineKeyboardButton(
         text="✋ Введу количество вручную", 
         callback_data="male_manual"
+    ))
+    builder.add(InlineKeyboardButton(
+        text="✏️ Ввести для каждого намаза отдельно", 
+        callback_data="manual_individual"
     ))
     builder.add(InlineKeyboardButton(
         text="🎓 Хочу научиться считать сам!", 
@@ -30,8 +35,8 @@ def get_female_calculation_method_keyboard() -> InlineKeyboardMarkup:
         callback_data="female_manual"
     ))
     builder.add(InlineKeyboardButton(
-        text="📖 Подробный гайд по вычислению", 
-        callback_data="female_guide"
+        text="✏️ Ввести для каждого намаза отдельно", 
+        callback_data="manual_individual"
     ))
     builder.add(InlineKeyboardButton(
         text="📅 Знаю дату совершеннолетия", 
@@ -41,6 +46,41 @@ def get_female_calculation_method_keyboard() -> InlineKeyboardMarkup:
         text="🤔 Не помню дату совершеннолетия", 
         callback_data="female_no_maturity"
     ))
+    builder.add(InlineKeyboardButton(
+        text="📖 Подробный гайд по вычислению", 
+        callback_data="female_guide"
+    ))
+    
+    builder.adjust(1)
+    return builder.as_markup()
+
+def get_individual_prayer_input_keyboard(current_prayer: str = None, entered_prayers: dict = None) -> InlineKeyboardMarkup:
+    """Клавиатура для ввода количества по каждому намазу"""
+    builder = InlineKeyboardBuilder()
+    
+    if entered_prayers is None:
+        entered_prayers = {}
+    
+    prayer_order = ['fajr', 'zuhr', 'asr', 'maghrib', 'isha', 'witr', 'zuhr_safar', 'asr_safar', 'isha_safar']
+    
+    for prayer_type in prayer_order:
+        prayer_name = config.PRAYER_TYPES[prayer_type]
+        
+        if prayer_type == current_prayer:
+            text = f"✅ {prayer_name}"
+        elif prayer_type in entered_prayers:
+            text = f"📝 {prayer_name} ({entered_prayers[prayer_type]})"
+        else:
+            text = prayer_name
+            
+        builder.add(InlineKeyboardButton(
+            text=text, 
+            callback_data=f"input_individual_{prayer_type}"
+        ))
+    
+    # Показываем кнопку завершения только если что-то введено
+    if entered_prayers:
+        builder.add(InlineKeyboardButton(text="💾 Завершить ввод", callback_data="finish_individual_input"))
     
     builder.adjust(1)
     return builder.as_markup()

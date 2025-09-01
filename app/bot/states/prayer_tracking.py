@@ -6,3 +6,4 @@ class PrayerTrackingStates(StatesGroup):
     editing_prayer = State()
     manual_adjustment = State()
     confirmation_reset = State()
+    manual_input = State()

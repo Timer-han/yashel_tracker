@@ -61,3 +61,15 @@ class PrayerCalculationStates(StatesGroup):
     # Дополнительные состояния для завершения циклов
     birth_cycle_complete = State()
     miscarriage_cycle_complete = State()
+    
+    # Ручной ввод по каждому намазу
+    manual_input_individual = State()
+    manual_input_fajr = State()
+    manual_input_zuhr = State()
+    manual_input_asr = State()
+    manual_input_maghrib = State()
+    manual_input_isha = State()
+    manual_input_witr = State()
+    manual_input_zuhr_safar = State()
+    manual_input_asr_safar = State()
+    manual_input_isha_safar = State()

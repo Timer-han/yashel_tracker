@@ -167,3 +167,42 @@ class PrayerService:
         )
         
         return True
+    
+    async def update_specific_prayers(self, telegram_id: int, prayers_data: Dict[str, int]) -> bool:
+        """Обновление только указанных типов намазов"""
+        user = await self.user_repo.get_user_by_telegram_id(telegram_id)
+        if not user:
+            return False
+        
+        for prayer_type, count in prayers_data.items():
+            if prayer_type in config.PRAYER_TYPES:
+                # Получаем текущий намаз
+                existing_prayer = await self.prayer_repo.get_prayer(telegram_id, prayer_type)
+                
+                if existing_prayer:
+                    # Обновляем существующий (сохраняем completed)
+                    await self.prayer_repo.create_or_update_prayer(
+                        user_id=telegram_id, prayer_type=prayer_type, 
+                        total_missed=count, completed=existing_prayer.completed
+                    )
+                else:
+                    # Создаем новый
+                    await self.prayer_repo.create_or_update_prayer(
+                        user_id=telegram_id, prayer_type=prayer_type, 
+                        total_missed=count, completed=0
+                    )
+                
+                # Добавляем в историю
+                await self.history_repo.add_history_record(
+                    PrayerHistory(
+                        user_id=telegram_id,
+                        prayer_type=prayer_type,
+                        action='update',
+                        amount=count,
+                        previous_value=existing_prayer.total_missed if existing_prayer else 0,
+                        new_value=count,
+                        comment='Индивидуальное обновление количества'
+                    )
+                )
+        
+        return True
