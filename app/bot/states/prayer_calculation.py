@@ -17,7 +17,6 @@ class PrayerCalculationStates(StatesGroup):
     male_learning_remember_maturity = State()
     male_learning_know_prayer_start = State() 
     male_learning_had_breaks = State()
-    male_learning_breaks_days_input = State()
     male_learning_final_count_input = State()
     
     # === ЖЕНСКИЕ СОСТОЯНИЯ ===

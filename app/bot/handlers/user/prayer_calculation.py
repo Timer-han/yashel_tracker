@@ -50,6 +50,11 @@ async def start_prayer_calculation(message: Message, state: FSMContext):
     else:  # female
         await message.answer(
             "🔢 **Расчет пропущенных намазов**\n\n"
+            "Давай приступим\! Для женщин в расчете пропущенных намазов и постов есть"
+            "важные индивидуальные нюансы, чтобы быть абсолютно уверенной в"
+            "правильности подсчета, после использования нашего трекера советуем"
+            "обратиться к специалисту для наиболее точного учета твоих индивидуальных"
+            "особенностей\.\n\n"
             "Выбери способ расчета:",
             reply_markup=get_female_calculation_method_keyboard(),
             parse_mode="MarkdownV2"
@@ -147,22 +152,14 @@ async def process_male_learn_remember(callback: CallbackQuery, state: FSMContext
     remembers = callback.data == "male_learn_remember_yes"
     
     if not remembers:
-        user = await user_service.get_or_create_user(callback.from_user.id)
-        if user.birth_date:
-            estimated_maturity = calculation_service.estimate_maturity_age(user.birth_date, False)
-            await state.update_data(maturity_date=estimated_maturity, estimated=True)
-            text = f"📅 Используем приблизительную дату совершеннолетия: {format_date(estimated_maturity)}\n\n"
-        else:
-            await callback.message.edit_text(
-                "❌ Нужна дата рождения для оценки\. Пройди регистрацию или введи дату совершеннолетия вручную\.",
-                parse_mode="MarkdownV2"
-            )
-            return
+        text = ("💡 **Напоминание:**\n\n"
+                "Спроси у родных, раскопай архивы, вспомни события своего 12\\-15\\-летнего возраста\\. "
+                "Если не помнишь, то возьми за возраст совершеннолетия 11\\.5 лет\\.\n\n")
     else:
         text = ""
     
     text += ("Ты знаешь дату, когда начал стабильно совершать 6 намазов в день?\n\n"
-             "💡 Если не знаешь точно, возьми дату, в которую ты уже точно читал 6 намазов ежедневно\.")
+             "💡 Если не знаешь точно, возьми дату, в которой ты уже точно читал 6 намазов ежедневно\\.")
     
     await callback.message.edit_text(
         text,
@@ -175,11 +172,18 @@ async def process_male_learn_remember(callback: CallbackQuery, state: FSMContext
 async def process_male_learn_prayer_start(callback: CallbackQuery, state: FSMContext):
     """Обработка знания даты начала намазов"""
     knows_start = callback.data == "male_learn_know_start_yes"
-    await state.update_data(knows_prayer_start=knows_start)
+    
+    if not knows_start:
+        text = ("💡 **Напоминание:**\n\n"
+                "Возьми дату, в которой ты уже точно читал 6 намазов в день\\.\n\n")
+    else:
+        text = ""
+    
+    text += ("🤔 Были ли ещё периоды, когда ты не читал намаз?\n\n"
+             "Например: болезнь, путешествия, забывчивость и т\\.д\\.")
     
     await callback.message.edit_text(
-        "🤔 Были ли ещё периоды, когда ты не читал намаз?\n\n"
-        "Например: болезнь, путешествия, забывчивость и т\.д\.",
+        text,
         reply_markup=get_yes_no_keyboard("male_learn_breaks_yes", "male_learn_breaks_no"),
         parse_mode="MarkdownV2"
     )
@@ -188,58 +192,37 @@ async def process_male_learn_prayer_start(callback: CallbackQuery, state: FSMCon
 @router.callback_query(PrayerCalculationStates.male_learning_had_breaks, F.data == "male_learn_breaks_yes")
 async def male_learn_had_breaks(callback: CallbackQuery, state: FSMContext):
     """У мужчины были перерывы в намазах"""
-    await callback.message.edit_text(
-        "📊 Посчитай суммарное количество пропущенных дней и введи его:\n\n"
-        "Например: 180",
-        parse_mode="MarkdownV2"
-    )
-    await state.set_state(PrayerCalculationStates.male_learning_breaks_days_input)
+    await ask_male_total_days_input(callback, state)
 
 @router.callback_query(PrayerCalculationStates.male_learning_had_breaks, F.data == "male_learn_breaks_no")
 async def male_learn_no_breaks(callback: CallbackQuery, state: FSMContext):
     """У мужчины не было перерывов"""
-    await state.update_data(break_days=0)
-    await ask_male_final_input(callback, state)
+    await ask_male_total_days_input(callback, state)
 
-@router.message(PrayerCalculationStates.male_learning_breaks_days_input)
-async def process_male_break_days(message: Message, state: FSMContext):
-    """Обработка дней перерывов"""
-    break_days, error = validate_number_input(message.text, min_val=0, integer_only=True)
-    if error:
-        await message.answer(error, parse_mode="MarkdownV2")
-        return
-    
-    await state.update_data(break_days=break_days)
-    
-    # Создаем фиктивный callback для совместимости
-    class FakeCallback:
-        def __init__(self, message):
-            self.message = message
-    
-    await ask_male_final_input(FakeCallback(message), state, is_message=True)
-
-async def ask_male_final_input(callback_or_message, state: FSMContext, is_message=False):
-    """Запрос финального ввода количества намазов"""
-    text = ("📝 Теперь введи общее количество пропущенных намазов:\n\n"
-            "💡 Это может быть количество дней × 6 намазов \+ дополнительные пропуски")
+async def ask_male_total_days_input(callback_or_message, state: FSMContext, is_message=False):
+    """Запрос общего количества пропущенных дней"""
+    text = ("🧮 **Посчитай суммарное число пропущенных дней и введи его:**\n\n"
+            "📝 Считай все дни от совершеннолетия до начала регулярных намазов \\+ дни дополнительных перерывов\n\n"
+            "Например: 1825 \\(5 лет × 365 дней\\)")
     
     if is_message:
-        await callback_or_message.message.answer(text, parse_mode="MarkdownV2")
+        await callback_or_message.answer(text, parse_mode="MarkdownV2")
     else:
         await callback_or_message.message.edit_text(text, parse_mode="MarkdownV2")
     
     await state.set_state(PrayerCalculationStates.male_learning_final_count_input)
 
 @router.message(PrayerCalculationStates.male_learning_final_count_input)
-async def process_male_final_count(message: Message, state: FSMContext):
-    """Финальная обработка количества намазов для мужчины"""
-    total_count, error = validate_number_input(message.text, min_val=0, integer_only=True)
+async def process_male_total_days(message: Message, state: FSMContext):
+    """Обработка общего количества пропущенных дней"""
+    total_days, error = validate_number_input(message.text, min_val=0, integer_only=True)
     if error:
         await message.answer(error, parse_mode="MarkdownV2")
         return
     
-    # Распределяем поровну между всеми намазами
-    per_prayer = int(total_count // 6)
+    # Рассчитываем намазы из дней (6 намазов в день)
+    total_prayers = int(total_days * 6)
+    per_prayer = total_prayers // 6
     
     prayers_data = {
         'fajr': per_prayer,
@@ -256,9 +239,25 @@ async def process_male_final_count(message: Message, state: FSMContext):
     # Сохраняем результат
     await prayer_service.set_user_prayers(message.from_user.id, prayers_data)
     
-    result_text = calculation_service.format_calculation_summary(prayers_data)
+    result_text = (
+        f"✅ **Обучающий расчет завершен\\!**\n\n"
+        f"📊 Пропущено дней: {int(total_days)}\n"
+        f"🕌 Это составляет: {total_prayers} намазов\n\n"
+        f"📝 **Распределение по намазам:**\n"
+        f"• Фаджр: {per_prayer}\n"
+        f"• Зухр: {per_prayer}\n"
+        f"• Аср: {per_prayer}\n"
+        f"• Магриб: {per_prayer}\n"
+        f"• Иша: {per_prayer}\n"
+        f"• Витр: {per_prayer}\n\n"
+        f"🤲 Пусть Аллах облегчит тебе восполнение\\!"
+    )
     
-    await message.answer(escape_markdown(result_text, "()-?.!_="), reply_markup=get_main_menu_keyboard(), parse_mode="MarkdownV2")
+    await message.answer(
+        result_text, 
+        reply_markup=get_main_menu_keyboard(), 
+        parse_mode="MarkdownV2"
+    )
     await state.clear()
 
 @router.message(PrayerCalculationStates.manual_input_count)
