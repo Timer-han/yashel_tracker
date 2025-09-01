@@ -17,7 +17,8 @@ def start_scheduler():
     # Ежедневные напоминания в указанное время
     scheduler.add_job(
         send_evening_reminders,
-        CronTrigger(hour=config.DAILY_REMINDER_HOUR, minute=56,second=10),
+        # CronTrigger(hour=13, minute=25,second=50),
+        CronTrigger(hour=17, minute=0,second=0),
         id='evening_reminders'
     )
     
