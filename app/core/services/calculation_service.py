@@ -96,65 +96,74 @@ class CalculationService:
         }
     
     def _calculate_excluded_days_detailed(self, start_date: date, end_date: date,
-                                        regular_cycle: bool, hayd_data: Dict,
-                                        births_data: List[Dict], miscarriages_data: List[Dict]) -> int:
+                                    regular_cycle: bool, hayd_data: Dict,
+                                    births_data: List[Dict], miscarriages_data: List[Dict]) -> int:
         """Детальный расчет исключенных дней для женщин"""
         
-        # Если указано общее количество дней хайда, используем его
+        total_period_days = (end_date - start_date).days
+        
+        # 1. Вычитаем дни нифаса
+        total_nifas_days = self._calculate_total_nifas_days(start_date, end_date, births_data, miscarriages_data)
+        
+        # 2. Вычитаем дни беременности
+        total_pregnancy_days = self._calculate_total_pregnancy_days(start_date, end_date, births_data, miscarriages_data)
+        
+        # 3. Из оставшихся дней вычисляем и вычитаем дни хайда
+        remaining_days_for_hayd = max(0, total_period_days - total_nifas_days - total_pregnancy_days)
+        
         if hayd_data.get('use_total', False):
-            total_nifas_days = self._calculate_total_nifas_days(start_date, end_date, births_data, miscarriages_data)
-            total_hayd_days = hayd_data.get('total_hayd_days', 0)
-            logger.error(f"total_nifas_days = {total_nifas_days}")
-            logger.error(f"total_hayd_days = {total_hayd_days}")
-            
-            return min(total_nifas_days + total_hayd_days, (end_date - start_date).days)
+            total_hayd_days = min(hayd_data.get('total_hayd_days', 0), remaining_days_for_hayd)
+        else:
+            # Рассчитываем хайд как долю от оставшихся дней
+            average_hayd = hayd_data.get('average_hayd', 5)
+            cycles_per_year = 12
+            total_hayd_days = min(
+                int((remaining_days_for_hayd / 365) * cycles_per_year * average_hayd),
+                remaining_days_for_hayd
+            )
         
-        # Объединяем и сортируем все события (роды и выкидыши)
-        all_events = []
+        total_excluded = total_nifas_days + total_pregnancy_days + total_hayd_days
         
-        # Добавляем роды
+        logger.error(f"total_nifas_days = {total_nifas_days}")
+        logger.error(f"total_pregnancy_days = {total_pregnancy_days}")
+        logger.error(f"total_hayd_days = {total_hayd_days}")
+        logger.error(f"total_excluded = {total_excluded}")
+        
+        return min(total_excluded, total_period_days)
+    
+    def _calculate_total_pregnancy_days(self, start_date: date, end_date: date, 
+                                   births_data: List[Dict], miscarriages_data: List[Dict]) -> int:
+        """Расчет общего количества дней беременности в периоде"""
+        total_pregnancy = 0
+        logger.error(f"births_data = {births_data}")
+        
+        # Дни беременности от родов (280 дней = ~40 недель)
         for birth in births_data:
-            # Убеждаемся, что дата в правильном формате
             birth_date = birth['date'] if isinstance(birth['date'], date) else date.fromisoformat(birth['date'])
-            all_events.append({
-                'date': birth_date,
-                'type': 'birth',
-                'nifas_days': birth['nifas_days'],
-                'hayd_after': birth.get('hayd_after')
-            })
+            conception_date = birth['conception_date'] if isinstance(birth['conception_date'], date) else date.fromisoformat(birth['conception_date'])
+            
+            # Проверяем пересечение периода беременности с расчетным периодом
+            pregnancy_start = max(conception_date, start_date)
+            pregnancy_end = min(birth_date, end_date)
+            
+            if pregnancy_start <= pregnancy_end:
+                pregnancy_days = (pregnancy_end - pregnancy_start).days
+                total_pregnancy += max(0, pregnancy_days)
         
-        # Добавляем выкидыши
+        # Дни беременности от выкидышей
         for miscarriage in miscarriages_data:
             miscarriage_date = miscarriage['date'] if isinstance(miscarriage['date'], date) else date.fromisoformat(miscarriage['date'])
-            all_events.append({
-                'date': miscarriage_date,
-                'type': 'miscarriage', 
-                'nifas_days': miscarriage['nifas_days'],
-                'hayd_after': miscarriage.get('hayd_after')
-            })
-        
-        # Сортируем события по дате
-        all_events.sort(key=lambda x: x['date'])
-        logger.error(f"all_events = {all_events}")
-        logger.error(f"hayd_data = {hayd_data}")
-        
-        # Создаем периоды для расчета
-        periods = self._create_calculation_periods(start_date, end_date, all_events, hayd_data)
-        logger.error(f"periods = {periods}")
-
-        total_excluded_days = 0
-        
-        # Считаем исключенные дни для каждого периода
-        for period in periods:
-            # Дни нифаса исключаются полностью
-            total_excluded_days += period.get('nifas_days', 0)
+            conception_date = miscarriage['conception_date'] if isinstance(miscarriage['conception_date'], date) else date.fromisoformat(miscarriage['conception_date'])
             
-            # Считаем дни хайда в периоде
-            hayd_days = self._calculate_hayd_in_period(period, regular_cycle)
-            logger.error(f"hayd_days = {hayd_days}")
-            total_excluded_days += hayd_days
+            # Проверяем пересечение периода беременности с расчетным периодом
+            pregnancy_start = max(conception_date, start_date)
+            pregnancy_end = min(miscarriage_date, end_date)
+            
+            if pregnancy_start <= pregnancy_end:
+                pregnancy_days = (pregnancy_end - pregnancy_start).days
+                total_pregnancy += max(0, pregnancy_days)
         
-        return min(total_excluded_days, (end_date - start_date).days)
+        return total_pregnancy
     
     def _calculate_total_nifas_days(self, start_date: date, end_date: date, 
                                    births_data: List[Dict], miscarriages_data: List[Dict]) -> int:

@@ -580,15 +580,36 @@ async def process_female_births_count_manual(message: Message, state: FSMContext
     await ask_birth_date(FakeCallback(message), state, 1, is_message=True)
 
 async def ask_birth_date(callback_or_message, state: FSMContext, birth_number: int, is_message=False):
-    """Запрос даты родов"""
-    text = (f"📅 Введи дату {birth_number}\-х родов в формате ДД\.ММ\.ГГГГ:\n\n"
-            f"Например: 20\.03\.2018")
+    """Запрос даты зачатия для родов"""
+    text = (f"📅 Введи дату {birth_number}\-го зачатия в формате ДД\.ММ\.ГГГГ:\n\n"
+            f"Например: 20\.06\.2017")
     
     if is_message:
         await callback_or_message.message.answer(text, parse_mode="MarkdownV2")
     else:
         await callback_or_message.message.edit_text(text, parse_mode="MarkdownV2")
     
+    await state.set_state(PrayerCalculationStates.female_birth_conception_date_input)
+    
+@router.message(PrayerCalculationStates.female_birth_conception_date_input)
+async def process_female_birth_conception_date(message: Message, state: FSMContext):
+    """Обработка даты зачатия для родов"""
+    data = await state.get_data()
+    maturity_date = data['maturity_date']
+    
+    conception_date, error = validate_date_input(message.text, min_date=maturity_date, max_date=date.today())
+    if error:
+        await message.answer(error, parse_mode="MarkdownV2")
+        return
+    
+    await state.update_data(current_birth_conception_date=conception_date)
+    
+    current_birth = data['current_birth']
+    await message.answer(
+        f"📅 Введи дату {current_birth}\-х родов в формате ДД\.ММ\.ГГГГ:\n\n"
+        f"Например: 20\.03\.2018",
+        parse_mode="MarkdownV2"
+    )
     await state.set_state(PrayerCalculationStates.female_birth_date_input)
 
 @router.message(PrayerCalculationStates.female_birth_date_input)
@@ -596,10 +617,20 @@ async def process_female_birth_date(message: Message, state: FSMContext):
     """Обработка даты родов"""
     data = await state.get_data()
     maturity_date = data['maturity_date']
+    conception_date = data['current_birth_conception_date']
     
-    birth_date, error = validate_date_input(message.text, min_date=maturity_date, max_date=date.today())
+    birth_date, error = validate_date_input(message.text, min_date=conception_date, max_date=date.today())
     if error:
         await message.answer(error, parse_mode="MarkdownV2")
+        return
+    
+    if birth_date <= conception_date:
+        await message.answer(
+            f"❌ Дата родов должна быть позже даты зачатия\.\n"
+            f"Дата зачатия: {conception_date.strftime('%d.%m.%Y')}\n"
+            f"Введите дату родов позже этой даты\.",
+            parse_mode="MarkdownV2"
+        )
         return
     
     await state.update_data(current_birth_date=birth_date)
@@ -652,6 +683,7 @@ async def process_birth_nifas_data(callback_or_message, state: FSMContext, nifas
     current_birth = data['current_birth']
     
     birth_data = {
+        'conception_date': data['current_birth_conception_date'],
         'date': data['current_birth_date'],
         'nifas_days': nifas_days
     }
@@ -713,6 +745,12 @@ async def process_female_birth_hayd_after_manual(message: Message, state: FSMCon
 async def complete_birth_processing(callback_or_message, state: FSMContext, birth_data: dict, is_message=False):
     """Завершение обработки текущих родов"""
     data = await state.get_data()
+    
+    # Если hayd_after не установлен, используем общее значение (для регулярного цикла)
+    if 'hayd_after' not in birth_data:
+        birth_data['hayd_after'] = data.get('hayd_average_days', 5)
+    
+    # Добавляем данные о текущих родах в общий список
     births_data = data.get('births_data', [])
     births_data.append(birth_data)
     
@@ -721,6 +759,7 @@ async def complete_birth_processing(callback_or_message, state: FSMContext, birt
     
     # Проверяем, есть ли еще роды для обработки
     if current_birth < total_births:
+        # Переходим к следующим родам
         next_birth = current_birth + 1
         await state.update_data(
             births_data=births_data,
@@ -809,15 +848,36 @@ async def process_female_miscarriages_count_manual(message: Message, state: FSMC
     await ask_miscarriage_date(FakeCallback(message), state, 1, is_message=True)
 
 async def ask_miscarriage_date(callback_or_message, state: FSMContext, miscarriage_number: int, is_message=False):
-    """Запрос даты выкидыша"""
-    text = (f"📅 Введи дату {miscarriage_number}\-го выкидыша в формате ДД\.ММ\.ГГГГ:\n\n"
-            f"Например: 15\.07\.2019")
+    """Запрос даты зачатия для выкидыша"""
+    text = (f"📅 Введи дату зачатия {miscarriage_number}\-го выкидыша в формате ДД\.ММ\.ГГГГ:\n\n"
+            f"Например: 15\.05\.2019")
     
     if is_message:
         await callback_or_message.message.answer(text, parse_mode="MarkdownV2")
     else:
         await callback_or_message.message.edit_text(text, parse_mode="MarkdownV2")
     
+    await state.set_state(PrayerCalculationStates.female_miscarriage_conception_date_input)
+    
+@router.message(PrayerCalculationStates.female_miscarriage_conception_date_input)
+async def process_female_miscarriage_conception_date(message: Message, state: FSMContext):
+    """Обработка даты зачатия для выкидыша"""
+    data = await state.get_data()
+    maturity_date = data['maturity_date']
+    
+    conception_date, error = validate_date_input(message.text, min_date=maturity_date, max_date=date.today())
+    if error:
+        await message.answer(error, parse_mode="MarkdownV2")
+        return
+    
+    await state.update_data(current_miscarriage_conception_date=conception_date)
+    
+    current_miscarriage = data['current_miscarriage']
+    await message.answer(
+        f"📅 Введи дату {current_miscarriage}\-го выкидыша в формате ДД\.ММ\.ГГГГ:\n\n"
+        f"Например: 15\.07\.2019",
+        parse_mode="MarkdownV2"
+    )
     await state.set_state(PrayerCalculationStates.female_miscarriage_date_input)
 
 @router.message(PrayerCalculationStates.female_miscarriage_date_input)
@@ -825,10 +885,20 @@ async def process_female_miscarriage_date(message: Message, state: FSMContext):
     """Обработка даты выкидыша"""
     data = await state.get_data()
     maturity_date = data['maturity_date']
+    conception_date = data['current_miscarriage_conception_date']
     
-    miscarriage_date, error = validate_date_input(message.text, min_date=maturity_date, max_date=date.today())
+    miscarriage_date, error = validate_date_input(message.text, min_date=conception_date, max_date=date.today()) 
     if error:
         await message.answer(error, parse_mode="MarkdownV2")
+        return
+    
+    if miscarriage_date <= conception_date:
+        await message.answer(
+            f"❌ Дата выкидыша должна быть позже даты зачатия\.\n"
+            f"Дата зачатия: {conception_date.strftime('%d.%m.%Y')}\n"
+            f"Введите дату выкидыша позже этой даты\.",
+            parse_mode="MarkdownV2"
+        )
         return
     
     await state.update_data(current_miscarriage_date=miscarriage_date)
@@ -881,6 +951,7 @@ async def process_miscarriage_nifas_data(callback_or_message, state: FSMContext,
     current_miscarriage = data['current_miscarriage']
     
     miscarriage_data = {
+        'conception_date': data['current_miscarriage_conception_date'],
         'date': data['current_miscarriage_date'],
         'nifas_days': nifas_days
     }
@@ -941,6 +1012,12 @@ async def process_female_miscarriage_hayd_after_manual(message: Message, state: 
 async def complete_miscarriage_processing(callback_or_message, state: FSMContext, miscarriage_data: dict, is_message=False):
     """Завершение обработки текущего выкидыша"""
     data = await state.get_data()
+    
+    # Если hayd_after не установлен, используем общее значение (для регулярного цикла)
+    if 'hayd_after' not in miscarriage_data:
+        miscarriage_data['hayd_after'] = data.get('hayd_average_days', 5)
+    
+    # Добавляем данные о текущем выкидыше в общий список
     miscarriages_data = data.get('miscarriages_data', [])
     miscarriages_data.append(miscarriage_data)
     
@@ -949,6 +1026,7 @@ async def complete_miscarriage_processing(callback_or_message, state: FSMContext
     
     # Проверяем, есть ли еще выкидыши для обработки
     if current_miscarriage < total_miscarriages:
+        # Переходим к следующему выкидышу
         next_miscarriage = current_miscarriage + 1
         await state.update_data(
             miscarriages_data=miscarriages_data,
@@ -1241,10 +1319,10 @@ def validate_date_input(date_text: str, min_date: date = None, max_date: date = 
         return None, "❌ Неверный формат даты\. Используй формат ДД\.ММ\.ГГГГ"
     
     if min_date and parsed_date < min_date:
-        return None, f"❌ Дата не может быть раньше {format_date(min_date)}\."
+        return None, f"❌ Дата не может быть раньше {escape_markdown(format_date(min_date))}\."
     
     if max_date and parsed_date > max_date:
-        return None, f"❌ Дата не может быть позже {format_date(max_date)}\."
+        return None, f"❌ Дата не может быть позже {escape_markdown(format_date(max_date))}\."
     
     return parsed_date, ""
 

@@ -391,6 +391,7 @@ async def process_nifas_duration(callback_or_message, nifas_days: int, state: FS
     # Сохраняем информацию о текущих родах
     birth_info = {
         'number': current_birth,
+        'conception_date': data['current_birth_conception_date'].isoformat(),
         'date': data['current_birth_date'].isoformat(),
         'nifas_days': nifas_days,
         'hayd_before': data['current_hayd_before']

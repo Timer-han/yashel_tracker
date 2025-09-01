@@ -29,6 +29,10 @@ class PrayerCalculationStates(StatesGroup):
     female_total_hayd_days_input = State()
     female_average_hayd_input = State()
     
+    # Даты начала беременности
+    female_birth_conception_date_input = State()
+    female_miscarriage_conception_date_input = State()
+
     # Роды
     female_births_question = State()
     female_births_count_input = State()
