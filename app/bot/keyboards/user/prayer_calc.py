@@ -18,10 +18,10 @@ def get_male_calculation_method_keyboard() -> InlineKeyboardMarkup:
         text="✏️ Ввести для каждого намаза отдельно", 
         callback_data="manual_individual"
     ))
-    builder.add(InlineKeyboardButton(
-        text="🎓 Хочу научиться считать сам!", 
-        callback_data="male_learn"
-    ))
+    # builder.add(InlineKeyboardButton(
+    #     text="🎓 Хочу научиться считать сам!", 
+    #     callback_data="male_learn"
+    # ))
     
     builder.adjust(1)
     return builder.as_markup()
