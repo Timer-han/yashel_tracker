@@ -34,7 +34,7 @@ async def _generate_statistics_text(user_id: int) -> tuple[str, InlineKeyboardMa
             "📊 *Твоя статистика:*\n\n"
             "📭 Данных пока нет\n\n"
             "• 🔢 Расчет намазов\n"
-            "• 📿 Управление постами",
+            "• 📿 Посты",
             None
         )
     

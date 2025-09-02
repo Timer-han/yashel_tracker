@@ -289,7 +289,7 @@ class CalculationService:
         
         return maturity_date
     
-    def format_calculation_summary(self, prayers_data: Dict[str, int], 
+    def format_calculation_summary_female(self, prayers_data: Dict[str, int], 
                                    calculation_details: Dict = None) -> str:
         """Форматирование итогов расчета"""
         total_prayers = sum(prayers_data.values())
@@ -313,6 +313,32 @@ class CalculationService:
                 
         summary += "\nМы добавили \+1% к пропущенным намазам, ведь лучше восполнить больше, чем оставить долги!\n"
         
+        summary += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
+        
+        return summary
+    
+    def format_calculation_summary(self, prayers_data: Dict[str, int], 
+                                   calculation_details: Dict = None) -> str:
+        """Форматирование итогов расчета"""
+        total_prayers = sum(prayers_data.values())
+        
+        summary = f"📊 **Результат расчета:**\n\n"
+        summary += f"📝 **Всего пропущенных намазов: {total_prayers}**\n\n"
+        
+        if calculation_details:
+            summary += f"📅 Период: с {calculation_details.get('start_date', '')} по {calculation_details.get('end_date', '')}\n"
+            if calculation_details.get('excluded_days'):
+                summary += f"❌ Исключено дней: {calculation_details['excluded_days']}\n"
+            if calculation_details.get('prayer_days'):
+                summary += f"✅ Дней для намазов: {calculation_details['prayer_days']}\n"
+            summary += "\n"
+        
+        summary += "**Детализация по намазам:**\n"
+        for prayer_type, count in prayers_data.items():
+            if count > 0:
+                prayer_name = config.PRAYER_TYPES[prayer_type]
+                summary += f"🕌 {prayer_name}: {count}\n"
+                        
         summary += "\n🤲 Пусть Аллах облегчит тебе восполнение!"
         
         return summary

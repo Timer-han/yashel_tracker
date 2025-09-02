@@ -39,7 +39,7 @@ async def show_fasting_menu(message: Message, state: FSMContext):
     remaining_days = max(0, missed_days - completed_days)
     
     stats_text = (
-        "📿 *Управление постами*\n\n"
+        "📿 *Посты*\n\n"
         f"📝 Пропущено дней: *{missed_days}*\n"
         f"✅ Восполнено дней: *{completed_days}*\n"
         f"⏳ Осталось: *{remaining_days}*\n"
@@ -128,12 +128,21 @@ async def calc_fasts_between_dates(callback: CallbackQuery, state: FSMContext):
     #         reply_markup=get_female_fasting_calculation_method_keyboard()
     #     )
 
-    await callback.message.edit_text(
-        "📅 *Расчет между датами*\n\n"
-        "Введи количество пропущенных лет:\n"
-        "Например: 4",
-        parse_mode='MarkdownV2'
-    )
+    user = await user_service.get_or_create_user(callback.from_user.id)
+    
+    if user.gender == 'male':
+        await callback.message.edit_text(
+            "📅 *Сколько лет постов ты пропустил\?*\n\n"
+            "Введи полное число пропущенных лет с момента совершеннолетия по Исламу до начала соблюдения постов\.\n\n"
+            "P\.S\. Дальше ты сможешь самостоятельно прибавить дни, если в этом будет необходимость\.",
+            parse_mode='MarkdownV2'
+        )
+    else:
+        await callback.message.edit_text(
+            "📅 *Расчёт между датами*\n\n"
+            "Сколько лет постов ты пропустила\?\n",
+            parse_mode='MarkdownV2'
+        )
     await state.set_state(FastingStates.waiting_for_fast_year_count)
 
 # @router.message(FastingStates.waiting_for_fast_period_start)
@@ -404,7 +413,7 @@ async def handle_fasting_actions(callback: CallbackQuery):
         
         # Отправляем новое меню после сброса
         menu_text = (
-            "📿 *Управление постами*\n\n"
+            "📿 *Посты*\n\n"
             f"📝 Пропущено дней: *{updated_user.fasting_missed_days or 0}*\n"
             f"✅ Восполнено дней: *{updated_user.fasting_completed_days or 0}*\n"
             f"⏳ Осталось: *{max(0, (updated_user.fasting_missed_days or 0) - (updated_user.fasting_completed_days or 0))}*\n"
@@ -513,7 +522,7 @@ async def send_fasting_action_message_and_update_menu(callback_query, action_typ
     
     # 2. Отправляем новое меню постов
     menu_text = (
-        "📿 *Управление постами*\n\n"
+        "📿 *Посты*\n\n"
         f"📝 Пропущено дней: *{missed_days}*\n"
         f"✅ Восполнено дней: *{completed_days}*\n"
         f"⏳ Осталось: *{remaining_days}*\n"

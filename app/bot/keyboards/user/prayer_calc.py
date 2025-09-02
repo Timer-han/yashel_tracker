@@ -30,12 +30,12 @@ def get_female_calculation_method_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура методов расчета для женщин"""
     builder = InlineKeyboardBuilder()
     
+    # builder.add(InlineKeyboardButton(
+    #     text="✋ Введу количество вручную", 
+    #     callback_data="female_manual"
+    # ))
     builder.add(InlineKeyboardButton(
-        text="✋ Введу количество вручную", 
-        callback_data="female_manual"
-    ))
-    builder.add(InlineKeyboardButton(
-        text="✏️ Ввести для каждого намаза отдельно", 
+        text="✏️ Знаю количество пропущенных намазов", 
         callback_data="manual_individual"
     ))
     builder.add(InlineKeyboardButton(

@@ -334,8 +334,9 @@ async def handle_childbirth_date_input(message: Message, state: FSMContext):
         
         current_birth = data['current_birth']
         await message.answer(
-            f"🌙 Продолжительность нифаса после {current_birth}-х родов",
-            reply_markup=get_nifas_duration_presets_keyboard()
+            f"🌙 *Продолжительность нифаса после {current_birth}\-х родов*",
+            reply_markup=get_nifas_duration_presets_keyboard(),
+            parse_mode="MarkdownV2"
         )
         await state.set_state(RegistrationStates.nifas_duration_input)
         
