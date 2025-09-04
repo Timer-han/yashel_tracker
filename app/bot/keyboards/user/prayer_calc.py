@@ -46,10 +46,10 @@ def get_female_calculation_method_keyboard() -> InlineKeyboardMarkup:
         text="🤔 Не помню дату совершеннолетия", 
         callback_data="female_no_maturity"
     ))
-    builder.add(InlineKeyboardButton(
-        text="📖 Подробный гайд по вычислению", 
-        callback_data="female_guide"
-    ))
+    # builder.add(InlineKeyboardButton(
+    #     text="📖 Подробный гайд по вычислению", 
+    #     callback_data="female_guide"
+    # ))
     
     builder.adjust(1)
     return builder.as_markup()
